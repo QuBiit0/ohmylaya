@@ -218,9 +218,13 @@ Setup and Agents; Update, Doctor and Logs).
 
 ## T17. Docs and release
 
-- [ ] README (honest limits first, one-shot commands, agent table),
-      `docs/usage.md`, `docs/limits.md`, `docs/agents.md`, `docs/troubleshooting.md`.
-- [ ] Tag v0.1.0, publish release, verify one-shot on all three OSes.
+- [x] README (honest limits first, one-shot commands, agent table),
+      `docs/usage.md`, `docs/limits.md`, `docs/troubleshooting.md`; the
+      agent table lives in the README. (2026-09-23)
+- [x] Release workflow on `v*` tags running tests then GoReleaser.
+      (2026-09-23)
+- [ ] Tag v0.1.0, publish release, verify the one-shot on all three OSes.
+      Windows verified from source; Linux and macOS need a machine.
 
 Review forecast: docs only.
 
