@@ -97,17 +97,20 @@ Review forecast: about 400 lines; may split spawn (T6a) and lifecycle (T6b).
 
 ## T7. Tools: preflight, decide, check
 
-- [ ] `internal/tools`: preflight estimator, confidence contract, `decide`,
-      `check` with the two-option workaround and key randomisation.
-- [ ] Golden tests with the fake provider.
+- [x] `internal/tools`: preflight estimator, confidence contract, `decide`,
+      `check` with the two-option workaround and key randomisation, reference
+      reader (path, url with HTML to text, glob with `**`). (2026-09-23)
+- [x] Tests with fake and scripted providers. (2026-09-23)
 
 Review forecast: about 350 lines.
 
 ## T8. Tools: classify, screen, rerank
 
-- [ ] Batching against `max_questions`, order preservation, `top_k`, partial
-      results with a deadline.
-- [ ] Golden tests.
+- [x] `classify` (items, paths or glob; ordered results; excerpts), `screen`
+      (three two-option questions, block/skip/allow, fail closed, text only
+      on allow with include_text), `rerank` (batches of 8, sort, top_k,
+      partial on deadline). (2026-09-23)
+- [x] Tests with scripted providers, httptest for URL refs. (2026-09-23)
 
 Review forecast: about 350 lines.
 

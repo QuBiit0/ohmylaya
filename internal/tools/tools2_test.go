@@ -38,7 +38,8 @@ func (s *scriptedTwoOption) Predict(ctx context.Context, reqs []jev.Request) ([]
 			if !ok {
 				continue
 			}
-			if len(opts) != 2 {
+			_, d0 := opts[0].Description.(string)
+			if len(opts) != 2 || !d0 {
 				// Multi-option classify: pick the option whose key appears in the state.
 				probs := map[string]float64{}
 				top, best := "", -1.0
