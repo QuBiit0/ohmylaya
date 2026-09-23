@@ -1,0 +1,52 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: test (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+      - name: Vet
+        run: go vet ./...
+      - name: Staticcheck
+        run: go run honnef.co/go/tools/cmd/staticcheck@2025.1.1 ./...
+      - name: Test
+        run: go test -race -count=1 ./...
+      - name: Build
+        run: go build -trimpath ./cmd/ohmylaya
+
+  pr-size:
+    name: pr size under 400 lines
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Count changed lines outside testdata and docs
+        run: |
+          base="${{ github.event.pull_request.base.sha }}"
+          head="${{ github.event.pull_request.head.sha }}"
+          lines=$(git diff --numstat "$base" "$head" -- . ':!testdata/**' ':!docs/**' ':!openspec/**' ':!go.sum' \
+            | awk '{ added += $1; removed += $2 } END { print added + removed }')
+          echo "changed lines: ${lines:-0}"
+          if [ "${lines:-0}" -gt 400 ]; then
+            echo "::error::PR changes ${lines} lines; the limit is 400. Split it into chained PRs."
+            exit 1
+          fi

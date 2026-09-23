@@ -1,0 +1,60 @@
+version: 2
+
+project_name: ohmylaya
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - id: ohmylaya
+    main: ./cmd/ohmylaya
+    binary: ohmylaya
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    ignore:
+      - goos: windows
+        goarch: arm64
+      - goos: darwin
+        goarch: amd64
+    flags:
+      - -trimpath
+    ldflags:
+      - -s -w
+      - -X github.com/QuBiit0/ohmylaya/internal/buildinfo.Version={{ .Version }}
+      - -X github.com/QuBiit0/ohmylaya/internal/buildinfo.Commit={{ .ShortCommit }}
+      - -X github.com/QuBiit0/ohmylaya/internal/buildinfo.Date={{ .Date }}
+
+archives:
+  - id: default
+    formats: [tar.gz]
+    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    format_overrides:
+      - goos: windows
+        formats: [zip]
+    files:
+      - LICENSE
+      - README.md
+
+checksum:
+  name_template: checksums.txt
+  algorithm: sha256
+
+changelog:
+  use: github
+  sort: asc
+  filters:
+    exclude:
+      - "^chore:"
+      - "^ci:"
+
+release:
+  prerelease: auto
+  draft: false

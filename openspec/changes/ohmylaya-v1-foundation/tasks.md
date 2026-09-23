@@ -23,12 +23,14 @@ Review forecast: docs only, about 150 lines.
 
 ## T1. Repository skeleton and CI
 
-- [ ] `go.mod` (module path per open question 1), `cmd/ohmylaya/main.go` with
-      version flag only, `Makefile` or `Taskfile`, `.golangci.yml`.
-- [ ] GitHub Actions: vet, staticcheck, `go test -race` on three OSes.
-- [ ] `.goreleaser.yaml` for windows/amd64, linux/amd64, linux/arm64,
-      darwin/arm64 with `checksums.txt`.
-- [ ] CONTRIBUTING.md, AI_POLICY.md, issue and PR templates, PR size check.
+- [x] `go.mod` (`github.com/QuBiit0/ohmylaya`), `cmd/ohmylaya/main.go`,
+      `internal/cli` with `version` and `help`, `internal/buildinfo`,
+      `Makefile`. Tests written first. (2026-09-23)
+- [x] GitHub Actions: vet, staticcheck, `go test -race` on three OSes, PR
+      size check. (2026-09-23)
+- [x] `.goreleaser.yaml` for windows/amd64, linux/amd64, linux/arm64,
+      darwin/arm64 with `checksums.txt`. (2026-09-23)
+- [x] CONTRIBUTING.md, AI_POLICY.md, issue and PR templates. (2026-09-23)
 
 Review forecast: about 300 lines, mostly config.
 
