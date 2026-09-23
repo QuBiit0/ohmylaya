@@ -1,0 +1,2 @@
+{"results":[{"model":"laya-rl-agent","answers":{"refund":{"type":"noul","confidence":0.977,"action":{"act_probability":1.0},"noul":0.977},"tone":{"type":"choice","confidence":0.0351,"action":{"act_probability":1.0},"choice":"B","probabilities":{"A":0.3902,"B":0.6098}}},"usage":{"input_tokens":93,"output_tokens":0}},{"model":"laya-rl-agent","answers":{"injection":{"type":"noul","confidence":0.9994,"action":{"act_probability":1.0},"noul":0.9994}},"usage":{"input_tokens":75,"output_tokens":0}}],"elapsed_ms":618.544,"backend":"CPU"}
+0.629890s

@@ -6,16 +6,18 @@ earlier packages. Strict TDD applies to every Go task.
 
 ## T0. Engine verification spike (no code merged)
 
-- [ ] Download laya.cpp r0002 Vulkan executables for Windows and Linux and the
-      macOS Core ML executable; download the multilingual checkpoint.
-- [ ] Verify: Vulkan executable starts with `--cpu` on a machine without a
-      Vulkan loader (Windows and Linux).
-- [ ] Verify: macOS executable honours `--cpu`.
-- [ ] Verify: `/health`, `/predict`, `/v1/systemone` shapes against the smoke
-      corpus; record responses into `testdata/engine/` for golden tests.
-- [ ] Measure cold start and per-question latency on CPU, Vulkan, CUDA.
-- [ ] Write `docs/research/engine-verification.md` with results and update
-      design D3 if a fallback assumption is wrong.
+- [x] Download laya.cpp r0002 Windows Vulkan executable and the multilingual
+      checkpoint; verify digests. (2026-09-23)
+- [x] Verify: Vulkan executable serves with `--cpu` and with `--vulkan` on
+      Windows; record `/health`, `/predict`, `/v1/systemone` responses into
+      `testdata/engine/r0002-multilingual/`. (2026-09-23)
+- [x] Measure cold start and latency on CPU and Vulkan (Windows). (2026-09-23)
+- [x] Write `docs/research/engine-verification.md`; design D3 and the
+      confidence contract updated. (2026-09-23)
+- [ ] Verify Vulkan executable with `--cpu` on a host without a Vulkan loader
+      (Windows and Linux).
+- [ ] Verify macOS executable honours `--cpu`.
+- [ ] Measure CUDA on Windows (needs the two cuBLAS DLLs).
 
 Review forecast: docs only, about 150 lines.
 

@@ -63,10 +63,11 @@ the upstream checksums file disagrees with a freshly downloaded asset.
   about 1.6 GiB per batch bucket; no one publishes compiled buckets. v2 can add
   Core ML once ohmylaya or upstream publishes them.
 - `cpu` is the universal fallback. laya.cpp exposes `--cpu` in every build.
-  Task T0 verifies that the Vulkan executables start without a Vulkan loader
-  and that the macOS executable honours `--cpu`; if either fails, T0's report
-  decides between an upstream request for a CPU-only asset and a documented
-  limitation.
+  T0 verified on Windows that the Vulkan executable serves on `--cpu` (ready in
+  4 s, about 0.5 s per three-question request on a Ryzen 7) and on `--vulkan`
+  (about 45 ms on an RTX 3050 Laptop) with identical answers. Still open: a
+  Windows or Linux host with no Vulkan loader at all, and macOS `--cpu`. See
+  `docs/research/engine-verification.md`.
 
 ### D4. Default model: `multilingual`
 

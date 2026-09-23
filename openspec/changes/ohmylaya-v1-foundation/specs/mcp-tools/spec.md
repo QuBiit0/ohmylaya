@@ -62,8 +62,12 @@ return a `warning` naming the option-budget limit.
 ### Requirement: Confidence contract
 
 Every answer MUST expose `probabilities` as returned by the engine, the engine's
-`confidence`, and an ohmylaya `action` of `auto` when confidence is at or above
-the tool's `auto_accept` threshold (default 0.8) or `review` otherwise. Missing
+`confidence`, and an ohmylaya `action` of `auto` when the gating value is at or
+above the tool's `auto_accept` threshold (default 0.8) or `review` otherwise.
+The gating value is the top probability for two-option questions (`check`,
+`screen`, `rerank`) and the engine `confidence` for questions with three or
+more options, because the engine's confidence is normalised entropy and reads
+low on any two-way split (0.61/0.39 yields 0.035). Missing
 or non-finite values MUST invalidate that answer with `status: "invalid_response"`
 rather than defaulting to a number.
 
