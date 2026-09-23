@@ -84,11 +84,14 @@ Review forecast: about 380 lines.
 
 ## T6. Sidecar supervision
 
-- [ ] `internal/sidecar`: lock, state file, detached spawn per OS, readiness
-      wait, health cache, client registration, idle reaper, log rotation,
-      overload retry.
-- [ ] Fake engine binary for tests; tests for lock races, stale lock, crash
-      restart limit, idle stop.
+- [x] `internal/sidecar`: lock, state file, detached spawn per OS, readiness
+      wait, client registration, idle reaper with activity touch, log
+      rotation at spawn, port fallback, config-change respawn. Overload
+      retry lives in `internal/jev`. Crash restart limit deferred to the MCP
+      layer (T9) which calls Ensure again once. (2026-09-23)
+- [x] Fake engine binary built in TestMain; tests for spawn then attach,
+      stale lock, crash with log tail, port fallback, stop, idle reaper,
+      touch, log rotation. (2026-09-23)
 
 Review forecast: about 400 lines; may split spawn (T6a) and lifecycle (T6b).
 
