@@ -1,0 +1,98 @@
+{
+  "schema": 1,
+  "engine": {
+    "project": "lkarlslund/laya.cpp",
+    "tag": "r0002",
+    "assets": [
+      {
+        "os": "windows", "arch": "amd64", "backend": "vulkan",
+        "name": "laya-r0002-windows-amd64-vulkan.exe",
+        "url": "https://github.com/lkarlslund/laya.cpp/releases/download/r0002/laya-r0002-windows-amd64-vulkan.exe",
+        "size": 80620032,
+        "sha256": "dcaf474b47b07c9d28e0f4b7b67f2c5ea56af16d3fd971fb8244846f60ba9728",
+        "supports_cpu": true
+      },
+      {
+        "os": "windows", "arch": "amd64", "backend": "cuda",
+        "name": "laya-r0002-windows-amd64-cuda.exe",
+        "url": "https://github.com/lkarlslund/laya.cpp/releases/download/r0002/laya-r0002-windows-amd64-cuda.exe",
+        "size": 200562176,
+        "sha256": "92f3e52549ae13601572d545705b35e9dc8f35979823cbdd4a1735e2aac3fdb1",
+        "supports_cpu": true,
+        "extra": {
+          "name": "libcublas-windows-x86_64-13.1.0.3-archive.zip",
+          "url": "https://developer.download.nvidia.com/compute/cuda/redist/libcublas/windows-x86_64/libcublas-windows-x86_64-13.1.0.3-archive.zip",
+          "sha256": "4ac4847bbe4f7709b244956fcfc32197a2954ee70b155cb67eebd9ee26f7e339",
+          "members": ["bin/cublas64_13.dll", "bin/cublasLt64_13.dll", "LICENSE"]
+        }
+      },
+      {
+        "os": "linux", "arch": "amd64", "backend": "vulkan",
+        "name": "laya-r0002-linux-amd64-vulkan",
+        "url": "https://github.com/lkarlslund/laya.cpp/releases/download/r0002/laya-r0002-linux-amd64-vulkan",
+        "size": 81883672,
+        "sha256": "1ca5e9996554e5a4f1770e2d18b741e3468a6bf372f79cde6231b5c1ac31016e",
+        "supports_cpu": true
+      },
+      {
+        "os": "linux", "arch": "amd64", "backend": "cuda",
+        "name": "laya-r0002-linux-amd64-cuda",
+        "url": "https://github.com/lkarlslund/laya.cpp/releases/download/r0002/laya-r0002-linux-amd64-cuda",
+        "size": 786472232,
+        "sha256": "ec56213b658b77e2f4a87c3fd939076e99d172d137035b0ce4670069b3ece421",
+        "supports_cpu": true
+      },
+      {
+        "os": "darwin", "arch": "arm64", "backend": "coreml",
+        "name": "laya-r0002-macos-arm64-coreml",
+        "url": "https://github.com/lkarlslund/laya.cpp/releases/download/r0002/laya-r0002-macos-arm64-coreml",
+        "size": 37817016,
+        "sha256": "f7f357ca4aaeeae826ae4a45aaae810544abc7c405c28f0cd43d46133caee1f3",
+        "supports_cpu": true
+      }
+    ]
+  },
+  "models": {
+    "repo": "convaiinnovations/laya",
+    "revision": "1c5edc17a7acd8701df6fc341c0d179f1c62c982",
+    "variants": {
+      "english": {
+        "prefix": "",
+        "context": 512,
+        "head_max_len": 192,
+        "files": [
+          {"path": "model.safetensors", "size": 842609210, "sha256": "891102d372688fc2a094dac56a384bc537b87c63f21f9f3dac0be2b7cbc8d86c"},
+          {"path": "rl_agent_config.json", "size": 745, "sha256": "ae287b56bbcf5f8c4f4541ae9dfd00c914c4c48b940b8398c3058af37ba92bbd"},
+          {"path": "encoder/config.json", "size": 2083, "sha256": "bf3ab80598fdccf414855a2ce80f22859e4492d06ca8a62ddd1cfb63972f8979"},
+          {"path": "tokenizer/tokenizer.json", "size": 3583228, "sha256": "6c8aaa9a542084f2457eab775d4eeb51f92a70c0fd9de28d5edb0ddec3c08d30"},
+          {"path": "tokenizer/tokenizer_config.json", "size": 308, "sha256": "50044de60daaa73df97d262e15a40d4faf0160e7d742df64b377877a1320dd12"}
+        ]
+      },
+      "multilingual": {
+        "prefix": "multilingual/",
+        "context": 1024,
+        "head_max_len": 256,
+        "files": [
+          {"path": "model.safetensors", "size": 643835514, "sha256": "9d628fd971b700382ac6f65920a86f149777b2e748e0c955fb3b19695aa8f204"},
+          {"path": "rl_agent_config.json", "size": 472, "sha256": "25061739243b617ad88d1219ba6f8a9c86c5881ca28df024fa2d9b3b2fcc30c6"},
+          {"path": "encoder/config.json", "size": 1938, "sha256": "83f6916d13ef0f556ac461f28308dc2bffa7ebeadee8ec9e2db5812020ea5bb4"},
+          {"path": "tokenizer/tokenizer.json", "size": 34363188, "sha256": "609d8f4c067cd3950f88594c5a802616cea245823836ef5848ee4fc40aab5b6f"},
+          {"path": "tokenizer/tokenizer_config.json", "size": 524, "sha256": "6c6b2d8e3c84ce0e671c129cd6b374b235d6f9863042a5836358d00a89bbb5a1"}
+        ]
+      },
+      "typed-decisions": {
+        "prefix": "typed-decisions/",
+        "context": 1024,
+        "head_max_len": 256,
+        "files": [
+          {"path": "model.safetensors", "size": 842609220, "sha256": "4fa56de72383a9d3efa9cfa78955733c81b9fc8067a587ca4beb82c78107a24e"},
+          {"path": "rl_agent_config.json", "size": 847, "sha256": "ebf0cd524d92342a6be5e48e9fca3d7c2babfb5a56ccd79d2171ef5d8c7f7be8"},
+          {"path": "encoder/config.json", "size": 2084, "sha256": "5268d24ad3b77c8151de5dcb0762ba4391619aad9ab0bda33e36fb083cfeae6d"},
+          {"path": "tokenizer/tokenizer.json", "size": 3583228, "sha256": "6c8aaa9a542084f2457eab775d4eeb51f92a70c0fd9de28d5edb0ddec3c08d30"},
+          {"path": "tokenizer/tokenizer_config.json", "size": 337, "sha256": "08d4cf3ac4dca381759441b85b91a6d40e688471dcd33d15d6649eb0a9a854d1"}
+        ]
+      }
+    }
+  },
+  "signature": ""
+}
