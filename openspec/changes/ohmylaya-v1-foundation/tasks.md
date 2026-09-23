@@ -71,10 +71,14 @@ Review forecast: about 250 lines.
 
 ## T5. JEV types and providers
 
-- [ ] `internal/jev`: request and answer types, `Provider` interface, `local`
-      provider with `/predict` batching and 503 backoff, `typesafe` provider
-      with bearer auth and 429/529 backoff.
-- [ ] Golden tests using recorded engine responses from T0.
+- [x] `internal/jev`: request and answer types with order-preserving
+      `Questions` and `Options`, `Provider` interface, `local` provider with
+      `/predict` batching, question-limit splitting and merge, 503 backoff,
+      422 mapping and `/health`; `typesafe` provider with bearer auth and
+      429/529 backoff. (2026-09-23)
+- [x] Golden tests using recorded engine responses from T0, plus an
+      `engine`-tagged test run against the live engine (12 questions split
+      across calls and merged). (2026-09-23)
 
 Review forecast: about 380 lines.
 
