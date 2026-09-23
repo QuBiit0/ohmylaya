@@ -36,13 +36,16 @@ Review forecast: about 300 lines, mostly config.
 
 ## T2. Manifest and platform probes
 
-- [ ] `internal/manifest`: types, embedded `manifest.json` for r0002 and the
-      pinned Hugging Face revision, loader with validation tests.
+- [x] `internal/manifest`: types, embedded `manifest.json` for r0002 and the
+      pinned Hugging Face revision, loader with validation tests. (2026-09-23)
 - [ ] `internal/manifestgen`: fetches upstream `SHA256SUMS` and the HF tree API,
-      regenerates `manifest.json`, fails on mismatch.
-- [ ] `internal/platform`: OS/arch, glibc version, library probes
+      regenerates `manifest.json`, fails on mismatch. Moved to its own PR
+      (T2c) to keep T2 under the size limit; digests for r0002 were collected
+      by hand and recorded in `docs/research/engine-verification.md`.
+- [x] `internal/platform`: OS/arch, glibc version, library probes
       (`vulkan-1.dll`, `nvcuda.dll`, `libvulkan.so.1`, `libcuda.so.1`),
       recommendation table from the installer spec, with fakeable probes.
+      Verified on the Windows dev box: vulkan, cuda, cpu detected. (2026-09-23)
 
 Review forecast: about 380 lines.
 
