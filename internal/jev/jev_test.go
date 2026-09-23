@@ -54,6 +54,29 @@ func TestRequestMarshalPreservesQuestionOrder(t *testing.T) {
 	}
 }
 
+func TestQuestionUnmarshalKeepsCriteriaOrder(t *testing.T) {
+	t.Parallel()
+	var qs Questions
+	src := `{"q":{"type":"choice","instructions":"?","criteria":{"zeta":"z","alpha":null,"mid":{"k":1}}},"s":{"type":"score","instructions":"?","criteria":["low","high"]},"n":{"type":"noul","instructions":"?"}}`
+	if err := json.Unmarshal([]byte(src), &qs); err != nil {
+		t.Fatal(err)
+	}
+	opts, ok := qs[0].Question.Criteria.(Options)
+	if !ok || len(opts) != 3 || opts[0].Key != "zeta" || opts[1].Key != "alpha" || opts[1].Description != nil {
+		t.Errorf("criteria = %#v", qs[0].Question.Criteria)
+	}
+	if _, ok := qs[1].Question.Criteria.([]any); !ok {
+		t.Errorf("score criteria = %#v, want array", qs[1].Question.Criteria)
+	}
+	if qs[2].Question.Criteria != nil {
+		t.Errorf("noul criteria = %#v, want nil", qs[2].Question.Criteria)
+	}
+	out, _ := json.Marshal(qs)
+	if !strings.Contains(string(out), `"criteria":{"zeta":"z","alpha":null,"mid":{"k":1}}`) {
+		t.Errorf("round trip lost order: %s", out)
+	}
+}
+
 func TestParseRecordedSystemOneResponse(t *testing.T) {
 	t.Parallel()
 	var resp Response

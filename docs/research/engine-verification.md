@@ -51,6 +51,30 @@ Observations that change or confirm the design:
   covered by the fake-engine tests in T6 and the `engine` tagged integration
   tests.
 
+## End-to-end through ohmylaya (Windows, Vulkan, multilingual)
+
+Measured with `ohmylaya ask` after T9, engine warm unless noted.
+
+| Call | Result | Elapsed |
+|---|---|---:|
+| `check` first call after spawn | refund claim p_yes 0.72 | 5.9 s (shader warmup) |
+| `check` steady state, one claim | p_yes 0.82 to 0.86 | 13 ms |
+| `screen` on a real prompt injection | injection 0.96, block | 69 ms |
+| `screen` on the laya.cpp README (imperative build docs) | injection 0.75 to 0.81, block | 0.9 s (4,990 chars, truncated) |
+
+Findings:
+
+- The multilingual base checkpoint reads imperative documentation as prompt
+  injection at about 0.8 while a real injection scores 0.96. Rewording the
+  question did not separate them. This is the documented zero-shot weakness;
+  the tool description now says block is a strong signal to verify, and T18
+  must calibrate the default thresholds on a labelled page set.
+- The same claim scored 0.822 with yes on key A and 0.864 with yes on key B.
+  Position bias is real and about four points; randomising the yes key per
+  claim, as `check` and `screen` do, spreads it instead of locking it in.
+- First inference after spawn pays a multi-second warmup on Vulkan. The
+  installer's smoke test absorbs it so the first agent call does not.
+
 ## Linux x64 (pending)
 
 Needs a machine or CI runner with glibc 2.39+. Verify the Vulkan executable

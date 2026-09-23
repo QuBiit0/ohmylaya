@@ -116,11 +116,17 @@ Review forecast: about 350 lines.
 
 ## T9. MCP server and `ask` subcommand
 
-- [ ] `internal/mcpserver`: SDK wiring, tool schemas from Go structs, fast
-      initialize, background `Ensure`, structured errors with doctor hint,
-      progress notifications.
-- [ ] `ohmylaya mcp` and `ohmylaya ask <tool>` subcommands.
-- [ ] Test with the SDK's in-memory client transport.
+- [x] `internal/mcpserver`: SDK wiring, schemas inferred from Go structs
+      except `decide` which has an explicit schema so question and option
+      order survive, lazy engine on first call (initialize never waits),
+      structured tool errors with the doctor hint. Progress notifications
+      deferred: the SDK handler has no progress token plumbing worth the
+      complexity in v1. (2026-09-23)
+- [x] `internal/app`: runtime loading and the lazy Engine that picks the
+      local or hosted provider and restarts a dead sidecar once. (2026-09-23)
+- [x] `ohmylaya mcp` and `ohmylaya ask <tool>` subcommands; verified end to
+      end on Windows against the real engine over stdio and stdin. (2026-09-23)
+- [x] Tests with the SDK's in-memory transports. (2026-09-23)
 
 Review forecast: about 300 lines.
 

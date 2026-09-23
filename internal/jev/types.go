@@ -18,6 +18,59 @@ type Question struct {
 	Criteria     any    `json:"criteria,omitempty"`
 }
 
+// UnmarshalJSON keeps choice criteria in document order by decoding an
+// object into Options instead of a Go map.
+func (q *Question) UnmarshalJSON(b []byte) error {
+	var raw struct {
+		Type         string          `json:"type"`
+		Instructions any             `json:"instructions"`
+		Criteria     json.RawMessage `json:"criteria"`
+	}
+	if err := json.Unmarshal(b, &raw); err != nil {
+		return err
+	}
+	q.Type, q.Instructions, q.Criteria = raw.Type, raw.Instructions, nil
+	trimmed := bytes.TrimSpace(raw.Criteria)
+	switch {
+	case len(trimmed) == 0 || bytes.Equal(trimmed, []byte("null")):
+		return nil
+	case trimmed[0] == '{' && q.Type == "choice":
+		opts, err := decodeOptions(trimmed)
+		if err != nil {
+			return err
+		}
+		q.Criteria = opts
+		return nil
+	default:
+		var v any
+		if err := json.Unmarshal(trimmed, &v); err != nil {
+			return err
+		}
+		q.Criteria = v
+		return nil
+	}
+}
+
+func decodeOptions(b []byte) (Options, error) {
+	dec := json.NewDecoder(bytes.NewReader(b))
+	if _, err := dec.Token(); err != nil {
+		return nil, err
+	}
+	var out Options
+	for dec.More() {
+		tok, err := dec.Token()
+		if err != nil {
+			return nil, err
+		}
+		var desc any
+		if err := dec.Decode(&desc); err != nil {
+			return nil, err
+		}
+		out = append(out, Option{Key: tok.(string), Description: desc})
+	}
+	return out, nil
+}
+
 // Option is one choice option.
 type Option struct {
 	Key         string
