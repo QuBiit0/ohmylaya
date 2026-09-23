@@ -1,0 +1,19 @@
+# Go
+/bin/
+/dist/
+*.test
+*.out
+coverage.*
+
+# Editors and OS
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Local engine and models used by integration tests
+/.ohmylaya/
+/testdata/engine/downloads/
+
+# Generated
+/.goreleaser-*/
