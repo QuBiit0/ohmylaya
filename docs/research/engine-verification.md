@@ -75,6 +75,41 @@ Findings:
 - First inference after spawn pays a multi-second warmup on Vulkan. The
   installer's smoke test absorbs it so the first agent call does not.
 
+## Release v0.1.0 end to end (Windows, fresh home)
+
+Binary from the GitHub release, checksum verified by hand against
+`checksums.txt`, then `ohmylaya install --yes --agents none` in an empty
+home.
+
+| Step | Result |
+|---|---|
+| Download engine (77 MB) and multilingual checkpoint (647 MB) | 52 s wall including the smoke test |
+| Smoke test after cold start | 11.4 s (shader warmup) |
+| `doctor` | 7 pass, 1 warn (no agents), 0 fail; correctly reports 45292 owned by another home's engine and falls back to 45293 |
+| `check` over MCP stdio | supported, p_yes 0.65 |
+| `rerank` of 61 Go files, batch of 8 full-length states | timed out at 60 s |
+| same after packing calls by state size (12,000 chars) | 14 s, 61 scored |
+| register in Claude Code | `claude mcp list` shows Connected |
+| unregister | `~/.claude.json` byte-identical to before |
+| `uninstall` | failed once with "Access is denied" on the engine executable |
+
+Root causes and fixes:
+
+- Eight rows of 1024 tokens in one `/predict` call take 68 s on the 4 GB
+  RTX 3050 Laptop; four rows take 0.9 s and eight short rows 0.7 s. Engine
+  calls are now packed by total state characters as well as question count.
+- Engines started by short-lived commands (`ask`) had nobody to stop them.
+  Every engine start now spawns a detached `ohmylaya reap` that stops the
+  engine on idle and exits when it is gone.
+- Windows keeps a killed process's executable locked for a moment; uninstall
+  now retries removal for a few seconds.
+- Doctor test fake engines leaked to ports 45600..45603 before the smoke
+  check stopped what it started; fixed in the same change.
+
+Ranking quality note: for "where does the sidecar choose its port?" the
+top result was `local.go` (mentions ports) rather than `sidecar.go`. That is
+the base model's documented weakness, not a bug.
+
 ## Linux x64 (pending)
 
 Needs a machine or CI runner with glibc 2.39+. Verify the Vulkan executable

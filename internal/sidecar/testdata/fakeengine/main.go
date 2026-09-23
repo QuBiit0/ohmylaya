@@ -20,6 +20,7 @@ func main() {
 	variant := flag.String("variant", "english", "")
 	delay := flag.Duration("ready-delay", 0, "")
 	crash := flag.Bool("crash", false, "exit immediately")
+	touch := flag.String("touch", "", "write this file and exit (reaper stand-in)")
 	flag.Bool("server", false, "")
 	flag.Bool("vulkan", false, "")
 	flag.Bool("cuda", false, "")
@@ -31,6 +32,11 @@ func main() {
 	flag.Int("batch-wait-ms", 2, "")
 	flag.Parse()
 
+	if *touch != "" {
+		wd, _ := os.Getwd()
+		os.WriteFile(*touch, []byte(os.Getenv("OHMYLAYA_HOME")+"\n"+wd), 0o644)
+		return
+	}
 	if *crash || os.Getenv("FAKEENGINE_CRASH") == "1" {
 		fmt.Fprintln(os.Stderr, "fakeengine: simulated crash")
 		os.Exit(3)

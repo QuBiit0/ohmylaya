@@ -91,6 +91,7 @@ func (e *Engine) Service(ctx context.Context) (*tools.Service, error) {
 			return nil, fmt.Errorf("engine not installed at %s", e.rt.EnginePath())
 		}
 		e.sup = sidecar.New(e.rt.Layout, cfg, e.rt.EnginePath())
+		e.sup.SetReaper(ReaperCommand())
 	}
 	if e.handle != nil && e.svc != nil {
 		if st, err := sidecar.ReadState(e.rt.Layout); err == nil && st.PID == e.handle.PID {
@@ -131,16 +132,24 @@ func (e *Engine) Close() {
 	}
 }
 
-// RunReaper runs the idle reaper for the local provider until ctx ends.
-func (e *Engine) RunReaper(ctx context.Context) {
-	if e.rt.Config.Provider != "local" {
-		return
+// ReaperCommand is the detached command that stops an idle engine. It is
+// this binary running the hidden reap subcommand.
+func ReaperCommand() []string {
+	exe, err := os.Executable()
+	if err != nil {
+		return nil
 	}
-	e.mu.Lock()
-	sup := e.sup
-	e.mu.Unlock()
-	if sup == nil {
-		sup = sidecar.New(e.rt.Layout, e.rt.Config, e.rt.EnginePath())
+	if resolved, err := filepath.EvalSymlinks(exe); err == nil {
+		exe = resolved
 	}
-	sup.RunReaper(ctx, time.Minute)
+	return []string{exe, "reap"}
+}
+
+// reapPollInterval is short so the reaper notices a stopped engine and
+// exits well within uninstall's retry window, releasing its executable.
+const reapPollInterval = 2 * time.Second
+
+// Reap runs the idle reaper until the recorded engine is gone.
+func (r *Runtime) Reap(ctx context.Context) {
+	sidecar.New(r.Layout, r.Config, r.EnginePath()).RunReaperUntilGone(ctx, reapPollInterval)
 }

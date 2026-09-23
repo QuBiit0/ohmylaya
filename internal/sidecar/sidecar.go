@@ -63,7 +63,13 @@ type Supervisor struct {
 	client       *http.Client
 	readyTimeout time.Duration
 	extraEnv     []string
+	reaper       []string
 }
+
+// SetReaper sets the command spawned detached after every engine start.
+// It is expected to run the idle reaper until the engine is gone, so an
+// engine started by a short-lived command still stops when idle.
+func (s *Supervisor) SetReaper(cmd []string) { s.reaper = cmd }
 
 // New creates a supervisor for the engine executable at enginePath.
 func New(layout config.Layout, cfg *config.Config, enginePath string) *Supervisor {
@@ -239,11 +245,56 @@ func (s *Supervisor) spawn(ctx context.Context) (State, error) {
 			if err := WriteState(s.layout, st); err != nil {
 				return State{}, err
 			}
+			s.spawnReaper()
 			return st, nil
 		}
 	}
 	_ = terminate(cmd.Process)
 	return State{}, &StartError{Reason: "not ready within " + s.readyTimeout.String(), LogTail: tail(logPath)}
+}
+
+// spawnReaper starts the detached reaper command, if configured. Failures
+// are logged and otherwise ignored: the engine still works, it just will
+// not stop on idle until another ohmylaya process runs the reaper.
+func (s *Supervisor) spawnReaper() {
+	if len(s.reaper) == 0 {
+		return
+	}
+	cmd := exec.Command(s.reaper[0], s.reaper[1:]...)
+	// Outside Home: Windows cannot delete a process's current directory,
+	// and uninstall removes Home while the reaper may still be running.
+	cmd.Dir = os.TempDir()
+	cmd.Env = append(os.Environ(), "OHMYLAYA_HOME="+s.layout.Home)
+	detach(cmd)
+	if err := cmd.Start(); err != nil {
+		if f, ferr := os.OpenFile(filepath.Join(s.layout.State, logFile), os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o644); ferr == nil {
+			fmt.Fprintf(f, "[ohmylaya] reaper failed to start: %v\n", err)
+			f.Close()
+		}
+		return
+	}
+	go func() { _ = cmd.Wait() }()
+}
+
+// RunReaperUntilGone checks idleness on an interval and returns once the
+// recorded engine is no longer alive.
+func (s *Supervisor) RunReaperUntilGone(ctx context.Context, every time.Duration) {
+	t := time.NewTicker(every)
+	defer t.Stop()
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-t.C:
+			st, err := ReadState(s.layout)
+			if err != nil || !alive(st.PID) {
+				return
+			}
+			if stopped, _ := s.ReapIfIdle(ctx); stopped {
+				return
+			}
+		}
+	}
 }
 
 // choosePort returns the configured port or the next free one in range.

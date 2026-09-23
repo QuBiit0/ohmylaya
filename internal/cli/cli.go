@@ -88,6 +88,14 @@ func RunWithStdin(args []string, stdin io.Reader, stdout, stderr io.Writer) int 
 		return exitOK
 	case "mcp":
 		return runMCP(stderr)
+	case "reap":
+		// Hidden: spawned detached after every engine start.
+		rt, err := app.LoadRuntime()
+		if err != nil {
+			return exitFailure
+		}
+		rt.Reap(context.Background())
+		return exitOK
 	case "ask":
 		return runAsk(args[1:], stdin, stdout, stderr)
 	case "agents":
@@ -117,7 +125,6 @@ func runMCP(stderr io.Writer) int {
 	defer stop()
 	engine := app.NewEngine(rt)
 	defer engine.Close()
-	go engine.RunReaper(ctx)
 	if err := mcpserver.Run(ctx, engine, buildinfo.Version); err != nil && ctx.Err() == nil {
 		fmt.Fprintln(stderr, "ohmylaya mcp:", err)
 		return exitFailure

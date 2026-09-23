@@ -17,3 +17,5 @@ Thumbs.db
 
 # Generated
 /.goreleaser-*/
+# Local Pi runtime state
+.atl/

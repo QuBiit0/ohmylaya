@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strconv"
+	"strings"
 	"testing"
 	"time"
 
@@ -252,6 +253,58 @@ func TestTouchPostponesReaper(t *testing.T) {
 	time.Sleep(200 * time.Millisecond)
 	if stopped, _ := s.ReapIfIdle(context.Background()); stopped {
 		t.Error("recent activity must postpone the idle stop")
+	}
+}
+
+func TestSpawnLaunchesDetachedReaperWithHome(t *testing.T) {
+	s := newSupervisor(t)
+	marker := filepath.Join(t.TempDir(), "reaper-ran")
+	s.SetReaper([]string{fakeEngine, "-touch", marker})
+	h, err := s.Ensure(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer h.Close()
+	deadline := time.Now().Add(5 * time.Second)
+	for time.Now().Before(deadline) {
+		if b, err := os.ReadFile(marker); err == nil {
+			home, wd, _ := strings.Cut(string(b), "\n")
+			if home != s.layout.Home {
+				t.Errorf("reaper OHMYLAYA_HOME = %q, want %q", home, s.layout.Home)
+			}
+			// Windows cannot delete a process's current directory, so the
+			// reaper must not sit inside the home that uninstall removes.
+			if rel, err := filepath.Rel(s.layout.Home, wd); err == nil && !strings.HasPrefix(rel, "..") {
+				t.Errorf("reaper working directory %q is inside home %q", wd, s.layout.Home)
+			}
+			return
+		}
+		time.Sleep(50 * time.Millisecond)
+	}
+	t.Fatal("reaper command was not started")
+}
+
+func TestRunReaperUntilGoneStopsIdleEngineAndReturns(t *testing.T) {
+	s := newSupervisor(t)
+	s.cfg.IdleTimeout.Duration = 100 * time.Millisecond
+	h, err := s.Ensure(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	pid := h.PID
+	h.Close()
+	done := make(chan struct{})
+	go func() {
+		s.RunReaperUntilGone(context.Background(), 150*time.Millisecond)
+		close(done)
+	}()
+	select {
+	case <-done:
+	case <-time.After(10 * time.Second):
+		t.Fatal("reaper did not return")
+	}
+	if alive(pid) {
+		t.Error("engine still alive after the reaper returned")
 	}
 }
 
