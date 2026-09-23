@@ -182,8 +182,11 @@ Review forecast: about 400 lines; scripts may be a separate PR (T13b).
 
 ## T14. Doctor
 
-- [ ] `internal/doctor`: check catalogue, human and JSON output, `--smoke`,
-      `--fail-on`, offline timeouts.
+- [x] `internal/doctor`: check catalogue (platform, home, engine,
+      runtime-deps, model, port, sidecar, gpu, smoke, skill per agent,
+      agents, version), human and JSON output, `--smoke` that stops an
+      engine it started, `--fail-on warn`, three-second offline skip.
+      Verified on the Windows dev box. (2026-09-23)
 
 Review forecast: about 300 lines.
 

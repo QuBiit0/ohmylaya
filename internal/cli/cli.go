@@ -15,17 +15,20 @@ import (
 	"path/filepath"
 	"strings"
 	"text/tabwriter"
+	"time"
 
 	"github.com/QuBiit0/ohmylaya/internal/agents"
 	"github.com/QuBiit0/ohmylaya/internal/app"
 	"github.com/QuBiit0/ohmylaya/internal/buildinfo"
 	"github.com/QuBiit0/ohmylaya/internal/config"
+	"github.com/QuBiit0/ohmylaya/internal/doctor"
 	"github.com/QuBiit0/ohmylaya/internal/install"
 	"github.com/QuBiit0/ohmylaya/internal/manifest"
 	"github.com/QuBiit0/ohmylaya/internal/mcpserver"
 	"github.com/QuBiit0/ohmylaya/internal/platform"
 	"github.com/QuBiit0/ohmylaya/internal/skill"
 	"github.com/QuBiit0/ohmylaya/internal/tools"
+	"github.com/QuBiit0/ohmylaya/internal/update"
 )
 
 const usage = `Usage: ohmylaya <command> [flags]
@@ -37,6 +40,7 @@ Commands:
   uninstall   Remove the engine, model, skills and agent entries [--keep-models]
   mcp         Serve the tools over MCP on stdin/stdout (used by agents)
   ask <tool>  Call one tool with JSON input on stdin: decide, classify, check, screen, rerank
+  doctor      Diagnose the installation [--json] [--smoke] [--fail-on warn]
   agents      Show detection and registration status per agent
               [--json] [--register id,...] [--unregister id,...]
   version     Print the version and exit
@@ -78,6 +82,8 @@ func RunWithStdin(args []string, stdin io.Reader, stdout, stderr io.Writer) int 
 		return runAsk(args[1:], stdin, stdout, stderr)
 	case "agents":
 		return runAgents(args[1:], stdout, stderr)
+	case "doctor":
+		return runDoctor(args[1:], stdout, stderr)
 	case "install":
 		return runInstall(args[1:], stdin, stdout, stderr)
 	case "uninstall":
@@ -139,6 +145,37 @@ func runAsk(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 	enc := json.NewEncoder(stdout)
 	enc.SetIndent("", "  ")
 	if err := enc.Encode(out); err != nil {
+		return exitFailure
+	}
+	return exitOK
+}
+
+func runDoctor(args []string, stdout, stderr io.Writer) int {
+	fs := flag.NewFlagSet("doctor", flag.ContinueOnError)
+	fs.SetOutput(stderr)
+	asJSON := fs.Bool("json", false, "machine-readable output")
+	smoke := fs.Bool("smoke", false, "start the engine and run one request")
+	failOn := fs.String("fail-on", "fail", "exit non-zero on: fail, warn")
+	if err := fs.Parse(args); err != nil {
+		return exitUsage
+	}
+	ideps, err := installDeps(io.Discard)
+	if err != nil {
+		fmt.Fprintln(stderr, "ohmylaya doctor:", err)
+		return exitFailure
+	}
+	d := doctor.Deps{
+		Layout: ideps.Layout, Manifest: ideps.Manifest, Probe: ideps.Probe, Env: ideps.Env,
+		BinPath: ideps.BinPath, Version: buildinfo.Version, Client: &http.Client{Timeout: 5 * time.Second},
+		EnginePath: install.EnginePath(ideps.Layout), Smoke: *smoke, LatestRelease: update.LatestRelease,
+	}
+	r := doctor.Run(context.Background(), d)
+	if *asJSON {
+		_ = doctor.PrintJSON(stdout, r)
+	} else {
+		doctor.Print(stdout, r)
+	}
+	if r.ExitCode(*failOn == "warn") != 0 {
 		return exitFailure
 	}
 	return exitOK
