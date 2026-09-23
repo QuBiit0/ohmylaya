@@ -2,28 +2,43 @@
 package cli
 
 import (
+	"bufio"
 	"context"
 	"encoding/json"
+	"flag"
 	"fmt"
 	"io"
+	"net/http"
 	"os"
 	"os/exec"
 	"os/signal"
+	"path/filepath"
+	"strings"
 	"text/tabwriter"
 
 	"github.com/QuBiit0/ohmylaya/internal/agents"
 	"github.com/QuBiit0/ohmylaya/internal/app"
 	"github.com/QuBiit0/ohmylaya/internal/buildinfo"
+	"github.com/QuBiit0/ohmylaya/internal/config"
+	"github.com/QuBiit0/ohmylaya/internal/install"
+	"github.com/QuBiit0/ohmylaya/internal/manifest"
 	"github.com/QuBiit0/ohmylaya/internal/mcpserver"
+	"github.com/QuBiit0/ohmylaya/internal/platform"
+	"github.com/QuBiit0/ohmylaya/internal/skill"
 	"github.com/QuBiit0/ohmylaya/internal/tools"
 )
 
 const usage = `Usage: ohmylaya <command> [flags]
 
 Commands:
+  install     Download the engine and model, verify, register agents
+              [--backend auto|vulkan|cuda|cpu] [--model multilingual|english|typed-decisions]
+              [--agents claude,codex,opencode,pi|all|none] [--yes] [--no-skill] [--no-start]
+  uninstall   Remove the engine, model, skills and agent entries [--keep-models]
   mcp         Serve the tools over MCP on stdin/stdout (used by agents)
   ask <tool>  Call one tool with JSON input on stdin: decide, classify, check, screen, rerank
   agents      Show detection and registration status per agent
+              [--json] [--register id,...] [--unregister id,...]
   version     Print the version and exit
   help        Show this help
 
@@ -63,6 +78,10 @@ func RunWithStdin(args []string, stdin io.Reader, stdout, stderr io.Writer) int 
 		return runAsk(args[1:], stdin, stdout, stderr)
 	case "agents":
 		return runAgents(args[1:], stdout, stderr)
+	case "install":
+		return runInstall(args[1:], stdin, stdout, stderr)
+	case "uninstall":
+		return runUninstall(args[1:], stdin, stdout, stderr)
 	default:
 		fmt.Fprintf(stderr, "ohmylaya: unknown command %q\n\n", args[0])
 		fmt.Fprint(stderr, usage)
@@ -125,15 +144,171 @@ func runAsk(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 	return exitOK
 }
 
+func installDeps(stdout io.Writer) (install.Deps, error) {
+	l := config.NewLayout(config.Home())
+	m, err := manifest.Load()
+	if err != nil {
+		return install.Deps{}, err
+	}
+	bin, err := os.Executable()
+	if err != nil {
+		return install.Deps{}, err
+	}
+	if resolved, err := filepath.EvalSymlinks(bin); err == nil {
+		bin = resolved
+	}
+	return install.Deps{
+		Layout:   l,
+		Manifest: m,
+		Probe:    platform.HostProbe{},
+		Client:   &http.Client{},
+		Env:      agents.HostEnv(l.Backups, exec.LookPath),
+		BinPath:  bin,
+		Version:  buildinfo.Version,
+		Out:      stdout,
+		Progress: progressPrinter(stdout),
+	}, nil
+}
+
+func runInstall(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
+	fs := flag.NewFlagSet("install", flag.ContinueOnError)
+	fs.SetOutput(stderr)
+	var opts install.Options
+	var agentList string
+	fs.StringVar(&opts.Backend, "backend", "", "auto, vulkan, cuda or cpu")
+	fs.StringVar(&opts.Model, "model", "", "multilingual, english or typed-decisions")
+	fs.StringVar(&agentList, "agents", "", "comma-separated agent ids, all, or none")
+	fs.BoolVar(&opts.Yes, "yes", false, "do not prompt")
+	fs.BoolVar(&opts.NoSkill, "no-skill", false, "do not install the skill")
+	fs.BoolVar(&opts.NoStart, "no-start", false, "skip the smoke test")
+	if err := fs.Parse(args); err != nil {
+		return exitUsage
+	}
+	if agentList != "" {
+		opts.Agents = strings.Split(agentList, ",")
+	}
+	deps, err := installDeps(stdout)
+	if err != nil {
+		fmt.Fprintln(stderr, "ohmylaya install:", err)
+		return exitFailure
+	}
+	if !opts.Yes && isTerminal(stdin) {
+		deps.Prompt = &linePrompter{in: bufio.NewReader(stdin), out: stdout}
+	}
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
+	defer stop()
+	if _, err := install.Run(ctx, deps, opts); err != nil {
+		fmt.Fprintln(stderr, "ohmylaya install:", err)
+		return exitFailure
+	}
+	return exitOK
+}
+
+func runUninstall(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
+	fs := flag.NewFlagSet("uninstall", flag.ContinueOnError)
+	fs.SetOutput(stderr)
+	var opts install.UninstallOptions
+	yes := fs.Bool("yes", false, "do not prompt")
+	fs.BoolVar(&opts.KeepModels, "keep-models", false, "keep the downloaded checkpoints")
+	if err := fs.Parse(args); err != nil {
+		return exitUsage
+	}
+	deps, err := installDeps(stdout)
+	if err != nil {
+		fmt.Fprintln(stderr, "ohmylaya uninstall:", err)
+		return exitFailure
+	}
+	if !*yes && isTerminal(stdin) {
+		p := &linePrompter{in: bufio.NewReader(stdin), out: stdout}
+		ok, _ := p.Confirm("Remove " + deps.Layout.Home + " and the ohmylaya entries from your agents?")
+		if !ok {
+			fmt.Fprintln(stdout, "Cancelled.")
+			return exitOK
+		}
+	}
+	if err := install.Uninstall(context.Background(), deps, opts); err != nil {
+		fmt.Fprintln(stderr, "ohmylaya uninstall:", err)
+		return exitFailure
+	}
+	return exitOK
+}
+
+// progressPrinter renders a single-line progress indicator per file.
+func progressPrinter(w io.Writer) func(done, total int64) {
+	var lastPct int64 = -1
+	return func(done, total int64) {
+		if total <= 0 {
+			return
+		}
+		pct := done * 100 / total
+		if pct/5 == lastPct/5 && pct != 100 {
+			return
+		}
+		lastPct = pct
+		fmt.Fprintf(w, "\r  %3d%%", pct)
+		if pct == 100 {
+			fmt.Fprintln(w)
+		}
+	}
+}
+
+func isTerminal(r io.Reader) bool {
+	f, ok := r.(*os.File)
+	if !ok {
+		return false
+	}
+	st, err := f.Stat()
+	return err == nil && st.Mode()&os.ModeCharDevice != 0
+}
+
 func runAgents(args []string, stdout, stderr io.Writer) int {
-	asJSON := len(args) > 0 && args[0] == "--json"
+	fs := flag.NewFlagSet("agents", flag.ContinueOnError)
+	fs.SetOutput(stderr)
+	asJSON := fs.Bool("json", false, "machine-readable output")
+	register := fs.String("register", "", "comma-separated agent ids to register")
+	unregister := fs.String("unregister", "", "comma-separated agent ids to unregister")
+	if err := fs.Parse(args); err != nil {
+		return exitUsage
+	}
 	rt, err := app.LoadRuntime()
 	if err != nil {
 		fmt.Fprintln(stderr, "ohmylaya:", err)
 		return exitFailure
 	}
 	bin, _ := os.Executable()
+	if resolved, err := filepath.EvalSymlinks(bin); err == nil {
+		bin = resolved
+	}
 	env := agents.HostEnv(rt.Layout.Backups, exec.LookPath)
+	for _, id := range splitIDs(*register) {
+		a, ok := agents.ByID(id)
+		if !ok {
+			fmt.Fprintf(stderr, "ohmylaya agents: unknown agent %q\n", id)
+			return exitUsage
+		}
+		if err := skill.Install(a.SkillDir(env), buildinfo.Version); err != nil {
+			fmt.Fprintf(stderr, "ohmylaya agents: skill for %s: %v\n", id, err)
+			return exitFailure
+		}
+		if err := a.Register(env, bin); err != nil {
+			fmt.Fprintf(stderr, "ohmylaya agents: register %s: %v\n", id, err)
+			return exitFailure
+		}
+		fmt.Fprintf(stdout, "Registered %s\n", a.Name())
+	}
+	for _, id := range splitIDs(*unregister) {
+		a, ok := agents.ByID(id)
+		if !ok {
+			fmt.Fprintf(stderr, "ohmylaya agents: unknown agent %q\n", id)
+			return exitUsage
+		}
+		if _, err := a.Unregister(env); err != nil {
+			fmt.Fprintf(stderr, "ohmylaya agents: unregister %s: %v\n", id, err)
+			return exitFailure
+		}
+		_ = skill.Remove(a.SkillDir(env))
+		fmt.Fprintf(stdout, "Unregistered %s\n", a.Name())
+	}
 	var rows []agents.Status
 	staleFound := false
 	for _, a := range agents.All() {
@@ -141,7 +316,7 @@ func runAgents(args []string, stdout, stderr io.Writer) int {
 		staleFound = staleFound || st.Stale
 		rows = append(rows, st)
 	}
-	if asJSON {
+	if *asJSON {
 		enc := json.NewEncoder(stdout)
 		enc.SetIndent("", "  ")
 		_ = enc.Encode(rows)
@@ -169,6 +344,19 @@ func runAgents(args []string, stdout, stderr io.Writer) int {
 		return exitFailure
 	}
 	return exitOK
+}
+
+func splitIDs(s string) []string {
+	if strings.TrimSpace(s) == "" {
+		return nil
+	}
+	var out []string
+	for _, p := range strings.Split(s, ",") {
+		if p = strings.TrimSpace(p); p != "" {
+			out = append(out, p)
+		}
+	}
+	return out
 }
 
 func yesNo(b bool) string {

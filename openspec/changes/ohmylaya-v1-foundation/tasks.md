@@ -154,19 +154,29 @@ Review forecast: about 400 lines; split Claude+Codex (T11a) and OpenCode+Pi (T11
 
 ## T12. Skill
 
-- [ ] `skills/ohmylaya/SKILL.md`, `references/questions.md`,
-      `references/thresholds.md` (English, under the token budget).
-- [ ] `internal/skill`: embed, install per agent, version check.
+- [x] `skills/ohmylaya/SKILL.md`, `references/questions.md`,
+      `references/thresholds.md` (English, body under the budget, test
+      enforced). (2026-09-23)
+- [x] `internal/skill`: embed, install with version stamp, installed version
+      read, remove. (2026-09-23)
 
 Review forecast: about 250 lines, mostly prose.
 
 ## T13. Install and uninstall
 
-- [ ] `ohmylaya install` interactive and flag-driven flow composing T2 to T12,
-      summary with sizes, smoke test, idempotent re-run report.
-- [ ] `ohmylaya uninstall` with backup restore and `--keep-models`.
-- [ ] `install.sh` and `install.ps1` with checksum verification; shell tests
-      via `bats` and Pester in CI.
+- [x] `internal/install` with `Resolve` (backend, model, agents; prompts
+      through a `Prompter`), `Run` (downloads with skip-when-verified,
+      cuBLAS extraction, config save, smoke test that stops the engine
+      afterwards, skill install, registration with Pi skip), `Uninstall`.
+      Tests download a fake engine from httptest and run the smoke test for
+      real. Verified on the Windows dev box against the real engine.
+      (2026-09-23)
+- [x] `ohmylaya install` and `ohmylaya uninstall` subcommands with flags and
+      a line prompter for terminals; `ohmylaya agents --register/--unregister`
+      as the per-agent toggle. (2026-09-23)
+- [x] `install.sh` and `install.ps1` with checksum verification. Shell tests
+      in CI deferred until the first release publishes real archives.
+      (2026-09-23)
 
 Review forecast: about 400 lines; scripts may be a separate PR (T13b).
 

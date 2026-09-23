@@ -82,6 +82,24 @@ func TestAgentsListsEveryAgentInFreshHome(t *testing.T) {
 	if code := Run([]string{"agents", "--json"}, &stdout, &stderr); code != 0 || !strings.Contains(stdout.String(), `"id": "pi"`) {
 		t.Errorf("json output = %s", stdout.String())
 	}
+
+	// Register then unregister Claude Code in the fresh home.
+	stdout.Reset()
+	if code := Run([]string{"agents", "--register", "claude"}, &stdout, &stderr); code != 0 || !strings.Contains(stdout.String(), "Registered Claude Code") {
+		t.Fatalf("register: code=%d out=%s err=%s", code, stdout.String(), stderr.String())
+	}
+	stdout.Reset()
+	Run([]string{"agents", "--json"}, &stdout, &stderr)
+	if !strings.Contains(stdout.String(), `"registered": true`) {
+		t.Errorf("claude not registered: %s", stdout.String())
+	}
+	stdout.Reset()
+	if code := Run([]string{"agents", "--unregister", "claude"}, &stdout, &stderr); code != 0 || !strings.Contains(stdout.String(), "Unregistered Claude Code") {
+		t.Fatalf("unregister: code=%d out=%s", code, stdout.String())
+	}
+	if code := Run([]string{"agents", "--register", "emacs"}, &stdout, &stderr); code != 2 {
+		t.Errorf("unknown agent exit = %d, want 2", code)
+	}
 }
 
 func TestRunNoArgsPrintsUsageOnNonInteractiveStdout(t *testing.T) {

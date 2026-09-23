@@ -57,8 +57,37 @@ func main() {
 		var reqs []map[string]any
 		json.NewDecoder(r.Body).Decode(&reqs)
 		results := make([]map[string]any, 0, len(reqs))
-		for range reqs {
-			results = append(results, map[string]any{"model": "laya-rl-agent", "answers": map[string]any{}, "usage": map[string]int{"input_tokens": 1}})
+		for _, rq := range reqs {
+			answers := map[string]any{}
+			qs, _ := rq["questions"].(map[string]any)
+			for id, q := range qs {
+				qm, _ := q.(map[string]any)
+				switch qm["type"] {
+				case "noul":
+					answers[id] = map[string]any{"type": "noul", "noul": 0.9, "confidence": 0.9}
+				case "choice":
+					probs := map[string]float64{}
+					first := ""
+					if crit, ok := qm["criteria"].(map[string]any); ok {
+						for k := range crit {
+							if first == "" || k < first {
+								first = k
+							}
+						}
+						for k := range crit {
+							if k == first {
+								probs[k] = 0.9
+							} else {
+								probs[k] = 0.1 / float64(len(crit)-1)
+							}
+						}
+					}
+					answers[id] = map[string]any{"type": "choice", "choice": first, "probabilities": probs, "confidence": 0.9}
+				default:
+					answers[id] = map[string]any{"type": "score", "score": 1.0, "probabilities": map[string]float64{"0": 0.5, "1": 0.5}, "confidence": 0.5}
+				}
+			}
+			results = append(results, map[string]any{"model": "laya-rl-agent", "answers": answers, "usage": map[string]int{"input_tokens": 1}})
 		}
 		json.NewEncoder(w).Encode(map[string]any{"results": results, "elapsed_ms": 1, "backend": backend})
 	})
