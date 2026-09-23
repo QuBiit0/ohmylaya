@@ -205,9 +205,13 @@ Review forecast: about 350 lines.
 
 ## T16. TUI
 
-- [ ] `internal/tui`: root model, theme, Status, Setup, Agents, Update,
-      Doctor, Logs; non-interactive fallback.
-- [ ] `teatest` golden snapshots per screen.
+- [x] `internal/tui`: root model with injected Services, adaptive theme,
+      Status, Setup, Agents, Update, Doctor, Logs; keys ignored while busy;
+      no-argument launch on a terminal, plain status on pipes or
+      `TERM=dumb`. Every action calls the same code as the subcommands.
+      (2026-09-23)
+- [x] Tests drive Update and View directly with fake services instead of
+      `teatest`, which would add a dependency for little gain. (2026-09-23)
 
 Review forecast: about 400 lines per PR, expected three PRs (shell and Status;
 Setup and Agents; Update, Doctor and Logs).

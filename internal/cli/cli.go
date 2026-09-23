@@ -18,6 +18,8 @@ import (
 	"text/tabwriter"
 	"time"
 
+	"golang.org/x/term"
+
 	"github.com/QuBiit0/ohmylaya/internal/agents"
 	"github.com/QuBiit0/ohmylaya/internal/app"
 	"github.com/QuBiit0/ohmylaya/internal/buildinfo"
@@ -33,6 +35,8 @@ import (
 )
 
 const usage = `Usage: ohmylaya <command> [flags]
+
+With no command on an interactive terminal, ohmylaya opens its TUI.
 
 Commands:
   install     Download the engine and model, verify, register agents
@@ -67,8 +71,12 @@ func Run(args []string, stdout, stderr io.Writer) int {
 // RunWithStdin is Run with an explicit stdin for commands that read it.
 func RunWithStdin(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 	if len(args) == 0 {
-		fmt.Fprint(stdout, usage)
-		return exitOK
+		if isTerminal(stdin) && os.Getenv("TERM") != "dumb" {
+			return runTUI(stdin, stdout, stderr)
+		}
+		code := printStatus(stdout, stderr)
+		fmt.Fprint(stdout, "\n", usage)
+		return code
 	}
 
 	switch args[0] {
@@ -362,8 +370,7 @@ func isTerminal(r io.Reader) bool {
 	if !ok {
 		return false
 	}
-	st, err := f.Stat()
-	return err == nil && st.Mode()&os.ModeCharDevice != 0
+	return term.IsTerminal(int(f.Fd()))
 }
 
 func runAgents(args []string, stdout, stderr io.Writer) int {

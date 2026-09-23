@@ -102,14 +102,19 @@ func TestAgentsListsEveryAgentInFreshHome(t *testing.T) {
 	}
 }
 
-func TestRunNoArgsPrintsUsageOnNonInteractiveStdout(t *testing.T) {
-	t.Parallel()
+func TestRunNoArgsPrintsStatusAndUsageOnNonInteractiveStdin(t *testing.T) {
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+	t.Setenv("USERPROFILE", home)
+	t.Setenv("OHMYLAYA_HOME", home+"/.ohmylaya")
 	var stdout, stderr bytes.Buffer
-	code := Run(nil, &stdout, &stderr)
+	code := RunWithStdin(nil, strings.NewReader(""), &stdout, &stderr)
 	if code != 0 {
-		t.Fatalf("exit code = %d, want 0", code)
+		t.Fatalf("exit code = %d, want 0 (stderr %s)", code, stderr.String())
 	}
-	if !strings.Contains(stdout.String(), "Usage: ohmylaya") {
-		t.Errorf("stdout = %q, want usage", stdout.String())
+	for _, want := range []string{"ohmylaya " + buildinfo.Version, "backend vulkan", "Usage: ohmylaya"} {
+		if !strings.Contains(stdout.String(), want) {
+			t.Errorf("stdout missing %q:\n%s", want, stdout.String())
+		}
 	}
 }
