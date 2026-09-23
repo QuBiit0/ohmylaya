@@ -8,11 +8,19 @@ import (
 	"strings"
 )
 
+// DefaultMaxBatchChars bounds the total state text per engine call. Eight
+// full-length rows exhaust a 4 GB laptop GPU (68 s per call measured on an
+// RTX 3050) while four take under a second, so calls are packed by size as
+// well as by question count. About four rows of 1024 tokens at 3.2
+// characters per token.
+const DefaultMaxBatchChars = 12000
+
 // Local talks to a laya.cpp HTTP server on loopback.
 type Local struct {
 	baseURL      string
 	client       *http.Client
 	maxQuestions int
+	maxChars     int
 	backoff      func(int)
 }
 
@@ -25,7 +33,25 @@ func NewLocal(baseURL string, client *http.Client, maxQuestions int) *Local {
 	if maxQuestions < 1 {
 		maxQuestions = 8
 	}
-	return &Local{baseURL: strings.TrimRight(baseURL, "/"), client: client, maxQuestions: maxQuestions, backoff: defaultBackoff}
+	return &Local{baseURL: strings.TrimRight(baseURL, "/"), client: client, maxQuestions: maxQuestions, maxChars: DefaultMaxBatchChars, backoff: defaultBackoff}
+}
+
+// SetMaxBatchChars overrides the per-call state size bound.
+func (l *Local) SetMaxBatchChars(n int) {
+	if n > 0 {
+		l.maxChars = n
+	}
+}
+
+// stateChars estimates the size of a request's state in characters.
+func stateChars(r Request) int {
+	switch s := r.State.(type) {
+	case string:
+		return len(s)
+	default:
+		b, _ := json.Marshal(s)
+		return len(b)
+	}
 }
 
 // Name returns "local".
@@ -85,10 +111,16 @@ func (l *Local) Predict(ctx context.Context, reqs []Request) ([]Response, error)
 		out[i] = Response{Answers: map[string]Answer{}, Provider: l.Name()}
 	}
 	for start := 0; start < len(chunks); {
-		// Fill one HTTP call up to maxQuestions total.
-		end, total := start, 0
+		// Fill one HTTP call up to maxQuestions and maxChars of state, so a
+		// batch of long documents never exceeds what the GPU can hold.
+		end, total, chars := start, 0, 0
 		for end < len(chunks) && total+chunks[end].req.QuestionCount() <= l.maxQuestions {
+			c := stateChars(chunks[end].req)
+			if end > start && chars+c > l.maxChars {
+				break
+			}
 			total += chunks[end].req.QuestionCount()
+			chars += c
 			end++
 		}
 		if end == start {

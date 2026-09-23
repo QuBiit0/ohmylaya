@@ -184,6 +184,48 @@ func TestLocalSplitsRequestsOverQuestionLimit(t *testing.T) {
 	}
 }
 
+func TestLocalPacksCallsByStateSize(t *testing.T) {
+	t.Parallel()
+	var sizes []int
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		body, _ := readAll(r)
+		var batch []Request
+		json.Unmarshal(body, &batch)
+		sizes = append(sizes, len(batch))
+		var results []Response
+		for _, rq := range batch {
+			resp := Response{Model: "m", Answers: map[string]Answer{}}
+			for _, q := range rq.Questions {
+				resp.Answers[q.ID] = Answer{Type: "noul", Noul: 0.5}
+			}
+			results = append(results, resp)
+		}
+		json.NewEncoder(w).Encode(map[string]any{"results": results})
+	}))
+	t.Cleanup(srv.Close)
+	p := NewLocal(srv.URL, srv.Client(), 8)
+	p.SetMaxBatchChars(1000)
+	long := strings.Repeat("x", 400)
+	var reqs []Request
+	for i := 0; i < 6; i++ {
+		reqs = append(reqs, Request{State: long, Questions: Questions{Q("q", Question{Type: "noul", Instructions: "?"})}})
+	}
+	out, err := p.Predict(context.Background(), reqs)
+	if err != nil || len(out) != 6 {
+		t.Fatalf("out = %d, err = %v", len(out), err)
+	}
+	// 400 chars each, 1000 per call: two per call, three calls.
+	if len(sizes) != 3 || sizes[0] != 2 {
+		t.Errorf("batch sizes = %v, want [2 2 2]", sizes)
+	}
+	// A single oversized state still goes alone rather than never.
+	sizes = nil
+	p.SetMaxBatchChars(10)
+	if _, err := p.Predict(context.Background(), reqs[:2]); err != nil || len(sizes) != 2 {
+		t.Errorf("oversized states must go one per call: sizes = %v err = %v", sizes, err)
+	}
+}
+
 func TestLocalRetriesOn503ThenFails(t *testing.T) {
 	t.Parallel()
 	var calls atomic.Int32
