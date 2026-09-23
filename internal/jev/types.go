@@ -24,6 +24,9 @@ type Option struct {
 	Description any
 }
 
+// Opt builds one option.
+func Opt(key string, description any) Option { return Option{Key: key, Description: description} }
+
 // Options encodes as a JSON object in slice order.
 type Options []Option
 
@@ -56,6 +59,9 @@ type QuestionEntry struct {
 	ID       string
 	Question Question
 }
+
+// Q builds one question entry.
+func Q(id string, q Question) QuestionEntry { return QuestionEntry{ID: id, Question: q} }
 
 // Questions is an ordered question map.
 type Questions []QuestionEntry
