@@ -262,7 +262,6 @@ before any number appears in the README.
 ## Open questions
 
 1. Go module path: `github.com/QuBiit0/ohmylaya`, personal account, decided 2026-09-23.
-   until the owner decides.
 2. Whether the one-shot scripts live at a vanity domain or stay on raw GitHub
    URLs. Design assumes raw GitHub for v1.
 3. T0 outcomes for CPU fallback on Vulkan and macOS executables.
