@@ -62,9 +62,10 @@ Review forecast: about 350 lines.
 
 ## T4. Config and home layout
 
-- [ ] `internal/config`: defaults, TOML load and save, env overrides,
-      validation, `state/` helpers.
-- [ ] Golden test for the default `config.toml`.
+- [x] `internal/config`: Home, Layout, defaults, TOML load and save with
+      go-toml/v2, env overrides, validation. State helpers move to
+      `internal/sidecar` (T6) where they are used. (2026-09-23)
+- [x] Golden test for the default `config.toml`. (2026-09-23)
 
 Review forecast: about 250 lines.
 

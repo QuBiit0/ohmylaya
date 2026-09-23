@@ -1,0 +1,21 @@
+version = 1
+backend = 'vulkan'
+model = 'multilingual'
+port = 45292
+idle_timeout = '30m'
+provider = 'local'
+log_level = 'info'
+
+[precision]
+strict = false
+
+[batch]
+max_questions = 8
+max_pending = 32
+wait_ms = 2
+
+[tools]
+auto_accept = 0.8
+
+[agents]
+registered = []
