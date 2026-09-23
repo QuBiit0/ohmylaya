@@ -51,9 +51,12 @@ Review forecast: about 380 lines.
 
 ## T3. Acquire
 
-- [ ] `internal/acquire`: HTTP downloader with range resume, progress callback,
+- [x] `internal/acquire`: HTTP downloader with range resume, progress callback,
       SHA-256 verification, atomic placement, zip member extraction for cuBLAS.
-- [ ] Tests with `httptest` servers simulating interruption and corruption.
+      (2026-09-23)
+- [x] Tests with `httptest` servers simulating interruption, servers that
+      ignore Range, corruption, cancellation and already-present files.
+      (2026-09-23)
 
 Review forecast: about 350 lines.
 
