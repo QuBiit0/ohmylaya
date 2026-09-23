@@ -5,6 +5,7 @@ import (
 	"bufio"
 	"context"
 	"encoding/json"
+	"errors"
 	"flag"
 	"fmt"
 	"io"
@@ -41,6 +42,7 @@ Commands:
   mcp         Serve the tools over MCP on stdin/stdout (used by agents)
   ask <tool>  Call one tool with JSON input on stdin: decide, classify, check, screen, rerank
   doctor      Diagnose the installation [--json] [--smoke] [--fail-on warn]
+  update      Update the binary, then the engine, model and skill [--check]
   agents      Show detection and registration status per agent
               [--json] [--register id,...] [--unregister id,...]
   version     Print the version and exit
@@ -84,6 +86,8 @@ func RunWithStdin(args []string, stdin io.Reader, stdout, stderr io.Writer) int 
 		return runAgents(args[1:], stdout, stderr)
 	case "doctor":
 		return runDoctor(args[1:], stdout, stderr)
+	case "update":
+		return runUpdate(args[1:], stdout, stderr)
 	case "install":
 		return runInstall(args[1:], stdin, stdout, stderr)
 	case "uninstall":
@@ -148,6 +152,70 @@ func runAsk(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 		return exitFailure
 	}
 	return exitOK
+}
+
+func runUpdate(args []string, stdout, stderr io.Writer) int {
+	fs := flag.NewFlagSet("update", flag.ContinueOnError)
+	fs.SetOutput(stderr)
+	check := fs.Bool("check", false, "only report whether an update exists")
+	if err := fs.Parse(args); err != nil {
+		return exitUsage
+	}
+	deps, err := installDeps(stdout)
+	if err != nil {
+		fmt.Fprintln(stderr, "ohmylaya update:", err)
+		return exitFailure
+	}
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
+	defer stop()
+	client := &http.Client{Timeout: 10 * time.Minute}
+	plan, err := update.Check(ctx, client, buildinfo.Version)
+	switch {
+	case errors.Is(err, update.ErrUpToDate):
+		fmt.Fprintf(stdout, "ohmylaya %s is the latest release.\n", buildinfo.Version)
+	case err != nil:
+		fmt.Fprintln(stderr, "ohmylaya update:", err)
+		return exitFailure
+	case *check:
+		fmt.Fprintf(stdout, "ohmylaya %s installed, %s available.\n", buildinfo.Version, plan.Latest)
+		return exitOK
+	default:
+		fmt.Fprintf(stdout, "Updating ohmylaya %s to %s\n", buildinfo.Version, plan.Latest)
+		if err := update.Apply(ctx, client, plan, deps.BinPath); err != nil {
+			fmt.Fprintln(stderr, "ohmylaya update:", err)
+			return exitFailure
+		}
+		// The new binary carries the new manifest; let it reconcile.
+		cmd := exec.CommandContext(ctx, deps.BinPath, "install", "--yes", "--agents", "none")
+		cmd.Stdout, cmd.Stderr = stdout, stderr
+		if err := cmd.Run(); err != nil {
+			fmt.Fprintln(stderr, "ohmylaya update: reconcile with the new binary failed:", err)
+			return exitFailure
+		}
+		return reregister(stdout, stderr)
+	}
+	if *check {
+		return exitOK
+	}
+	// Same binary: reconcile engine, model and skill against the manifest.
+	if _, err := install.Run(ctx, deps, install.Options{Backend: "auto", Agents: []string{"none"}, Yes: true, NoStart: true}); err != nil {
+		fmt.Fprintln(stderr, "ohmylaya update:", err)
+		return exitFailure
+	}
+	return reregister(stdout, stderr)
+}
+
+// reregister refreshes the skill and absolute path for every registered agent.
+func reregister(stdout, stderr io.Writer) int {
+	rt, err := app.LoadRuntime()
+	if err != nil {
+		fmt.Fprintln(stderr, "ohmylaya update:", err)
+		return exitFailure
+	}
+	if len(rt.Config.Agents.Registered) == 0 {
+		return exitOK
+	}
+	return runAgents([]string{"--register", strings.Join(rt.Config.Agents.Registered, ",")}, stdout, stderr)
 }
 
 func runDoctor(args []string, stdout, stderr io.Writer) int {

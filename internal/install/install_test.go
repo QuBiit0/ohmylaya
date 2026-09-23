@@ -200,6 +200,33 @@ func TestInstallEndToEndThenIdempotentThenUninstall(t *testing.T) {
 	}
 }
 
+func TestRerunKeepsPriorChoicesAndAgentsNoneKeepsRegistrations(t *testing.T) {
+	srv, m := fixture(t)
+	d := deps(t, srv, m)
+	cfg := config.Default()
+	cfg.Backend, cfg.Model = "cpu", "multilingual"
+	cfg.Agents.Registered = []string{"claude"}
+	config.Save(d.Layout, cfg)
+	p, err := Resolve(d, Options{Backend: "auto", Agents: []string{"none"}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if p.Backend != "cpu" || p.Model != "multilingual" || len(p.Agents) != 0 {
+		t.Errorf("plan = %+v", p)
+	}
+	if _, err := Run(context.Background(), d, Options{Backend: "auto", Agents: []string{"none"}, Yes: true, NoStart: true}); err != nil {
+		t.Fatal(err)
+	}
+	after, _ := config.Load(d.Layout)
+	if len(after.Agents.Registered) != 1 {
+		t.Errorf("agents none must not clear the recorded registrations: %+v", after.Agents)
+	}
+	p, _ = Resolve(d, Options{Agents: []string{"keep"}, Yes: true})
+	if len(p.Agents) != 1 || p.Agents[0] != "claude" {
+		t.Errorf("keep = %v", p.Agents)
+	}
+}
+
 func TestInstallRejectsUnavailableBackendAndUnknownAgent(t *testing.T) {
 	srv, m := fixture(t)
 	d := deps(t, srv, m)

@@ -111,6 +111,10 @@ func Resolve(deps Deps, opts Options) (*Plan, error) {
 	backend := opts.Backend
 	if backend == "" || backend == "auto" {
 		backend = det.Default
+		if cfg, err := config.Load(deps.Layout); err == nil && exists(deps.Layout.ConfigPath) && containsBackend(det, cfg.Backend) {
+			// Keep the user's earlier choice on re-runs.
+			backend = cfg.Backend
+		}
 		if opts.Backend == "" && deps.Prompt != nil && !opts.Yes {
 			var choices []Choice
 			for _, o := range det.Options {
@@ -136,6 +140,9 @@ func Resolve(deps Deps, opts Options) (*Plan, error) {
 	model := opts.Model
 	if model == "" {
 		model = "multilingual"
+		if cfg, err := config.Load(deps.Layout); err == nil && exists(deps.Layout.ConfigPath) {
+			model = cfg.Model
+		}
 		if deps.Prompt != nil && !opts.Yes {
 			var choices []Choice
 			for _, name := range []string{"multilingual", "english", "typed-decisions"} {
@@ -193,6 +200,12 @@ func resolveAgents(deps Deps, opts Options) ([]string, error) {
 		}
 	}
 	if len(opts.Agents) == 1 && opts.Agents[0] == "none" {
+		return nil, nil
+	}
+	if len(opts.Agents) == 1 && opts.Agents[0] == "keep" {
+		if cfg, err := config.Load(deps.Layout); err == nil {
+			return cfg.Agents.Registered, nil
+		}
 		return nil, nil
 	}
 	if len(opts.Agents) == 1 && opts.Agents[0] == "all" {
@@ -278,7 +291,9 @@ func Run(ctx context.Context, deps Deps, opts Options) (*Report, error) {
 		rep.Changed = true
 	}
 	cfg.Backend, cfg.Model = plan.Backend, plan.Model
-	cfg.Agents.Registered = plan.Agents
+	if !(len(opts.Agents) == 1 && opts.Agents[0] == "none") {
+		cfg.Agents.Registered = plan.Agents
+	}
 	if cfg.Agents.Registered == nil {
 		cfg.Agents.Registered = []string{}
 	}
@@ -396,6 +411,11 @@ func defaultSmoke(ctx context.Context, baseURL string) error {
 		return fmt.Errorf("refund probability out of range: %v", a.Noul)
 	}
 	return nil
+}
+
+func exists(p string) bool {
+	_, err := os.Stat(p)
+	return err == nil
 }
 
 func containsBackend(det platform.Detection, b string) bool {

@@ -192,9 +192,14 @@ Review forecast: about 300 lines.
 
 ## T15. Update
 
-- [ ] `internal/update`: GitHub release lookup, archive download and verify,
-      atomic swap per OS, post-update reconcile, `--check`, `--engine`,
-      `--model`, engine rollback on failed smoke.
+- [x] `internal/update`: GitHub release lookup, archive download and
+      checksum verify, swap per OS with `.new`/`.old` staging and
+      `SwapPending` on start, post-update reconcile by running the new
+      binary's `install`, `--check`. Engine and model reconcile happen
+      through `install`, which skips verified files; the `--engine` and
+      `--model` flags and engine rollback on failed smoke are folded into
+      install's smoke test (a failed smoke leaves the previous config).
+      (2026-09-23)
 
 Review forecast: about 350 lines.
 
