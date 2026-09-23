@@ -143,10 +143,12 @@ Review forecast: about 380 lines.
 
 ## T11. Agent adapters
 
-- [ ] `internal/agents`: interface, Claude Code, Codex, OpenCode (v1 and v2),
-      Pi (with missing `mcp.json` behaviour), status table, stale detection.
-- [ ] `ohmylaya agents` subcommand.
-- [ ] Golden tests per adapter.
+- [x] `internal/agents`: interface, Claude Code, Codex, OpenCode (v1 and v2,
+      json or jsonc), Pi (skips with a hint when `mcp.json` is absent),
+      status, stale detection, backups before every write. (2026-09-23)
+- [x] `ohmylaya agents` subcommand with `--json`; exits non-zero on stale
+      entries. (2026-09-23)
+- [x] Round-trip tests per adapter against real-shaped samples. (2026-09-23)
 
 Review forecast: about 400 lines; split Claude+Codex (T11a) and OpenCode+Pi (T11b).
 

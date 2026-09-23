@@ -7,8 +7,11 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"os/exec"
 	"os/signal"
+	"text/tabwriter"
 
+	"github.com/QuBiit0/ohmylaya/internal/agents"
 	"github.com/QuBiit0/ohmylaya/internal/app"
 	"github.com/QuBiit0/ohmylaya/internal/buildinfo"
 	"github.com/QuBiit0/ohmylaya/internal/mcpserver"
@@ -20,6 +23,7 @@ const usage = `Usage: ohmylaya <command> [flags]
 Commands:
   mcp         Serve the tools over MCP on stdin/stdout (used by agents)
   ask <tool>  Call one tool with JSON input on stdin: decide, classify, check, screen, rerank
+  agents      Show detection and registration status per agent
   version     Print the version and exit
   help        Show this help
 
@@ -57,6 +61,8 @@ func RunWithStdin(args []string, stdin io.Reader, stdout, stderr io.Writer) int 
 		return runMCP(stderr)
 	case "ask":
 		return runAsk(args[1:], stdin, stdout, stderr)
+	case "agents":
+		return runAgents(args[1:], stdout, stderr)
 	default:
 		fmt.Fprintf(stderr, "ohmylaya: unknown command %q\n\n", args[0])
 		fmt.Fprint(stderr, usage)
@@ -117,6 +123,59 @@ func runAsk(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 		return exitFailure
 	}
 	return exitOK
+}
+
+func runAgents(args []string, stdout, stderr io.Writer) int {
+	asJSON := len(args) > 0 && args[0] == "--json"
+	rt, err := app.LoadRuntime()
+	if err != nil {
+		fmt.Fprintln(stderr, "ohmylaya:", err)
+		return exitFailure
+	}
+	bin, _ := os.Executable()
+	env := agents.HostEnv(rt.Layout.Backups, exec.LookPath)
+	var rows []agents.Status
+	staleFound := false
+	for _, a := range agents.All() {
+		st := a.Status(env, bin)
+		staleFound = staleFound || st.Stale
+		rows = append(rows, st)
+	}
+	if asJSON {
+		enc := json.NewEncoder(stdout)
+		enc.SetIndent("", "  ")
+		_ = enc.Encode(rows)
+	} else {
+		tw := tabwriter.NewWriter(stdout, 0, 4, 2, ' ', 0)
+		fmt.Fprintln(tw, "AGENT\tDETECTED\tREGISTERED\tCONFIG")
+		for _, st := range rows {
+			reg := "no"
+			switch {
+			case st.RegistryErr != "":
+				reg = "error: " + st.RegistryErr
+			case st.Registered && st.Stale:
+				reg = "stale (" + st.Command + ")"
+			case st.Registered:
+				reg = "yes"
+			}
+			fmt.Fprintf(tw, "%s\t%s\t%s\t%s\n", st.Name, yesNo(st.Detected), reg, st.ConfigPath)
+		}
+		tw.Flush()
+		if staleFound {
+			fmt.Fprintln(stdout, "\nStale entries point at a missing binary. Run 'ohmylaya install' to repair.")
+		}
+	}
+	if staleFound {
+		return exitFailure
+	}
+	return exitOK
+}
+
+func yesNo(b bool) string {
+	if b {
+		return "yes"
+	}
+	return "no"
 }
 
 func callTool(ctx context.Context, svc *tools.Service, name string, raw []byte) (any, error) {

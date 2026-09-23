@@ -62,6 +62,28 @@ func TestRun(t *testing.T) {
 	}
 }
 
+func TestAgentsListsEveryAgentInFreshHome(t *testing.T) {
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+	t.Setenv("USERPROFILE", home)
+	t.Setenv("OHMYLAYA_HOME", home+"/.ohmylaya")
+	t.Setenv("XDG_CONFIG_HOME", home+"/.config")
+	var stdout, stderr bytes.Buffer
+	code := Run([]string{"agents"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("exit = %d stderr = %s", code, stderr.String())
+	}
+	for _, name := range []string{"Claude Code", "Codex", "OpenCode", "Pi"} {
+		if !strings.Contains(stdout.String(), name) {
+			t.Errorf("missing %s in\n%s", name, stdout.String())
+		}
+	}
+	stdout.Reset()
+	if code := Run([]string{"agents", "--json"}, &stdout, &stderr); code != 0 || !strings.Contains(stdout.String(), `"id": "pi"`) {
+		t.Errorf("json output = %s", stdout.String())
+	}
+}
+
 func TestRunNoArgsPrintsUsageOnNonInteractiveStdout(t *testing.T) {
 	t.Parallel()
 	var stdout, stderr bytes.Buffer
