@@ -143,6 +143,30 @@ with `partial: true`).
 - WHEN `rerank` runs with `top_k: 5`
 - THEN five candidates return with descending scores.
 
+### Requirement: Reference inputs keep payloads out of the model context
+
+Every tool that accepts text MUST also accept references so the content never
+passes through the agent's context: `path` (file, read by ohmylaya, up to 2 MB),
+`url` (fetched by ohmylaya with a 10 second timeout, HTML reduced to text),
+and for `rerank` and `classify` a `paths` or `glob` list whose items become
+candidates with the path as id. When a reference is used the result MUST
+return only ids, scores and short excerpts (at most 200 characters), never the
+full content, unless `include_text: true` is passed.
+
+#### Scenario: Rerank files by path
+
+- GIVEN `rerank` called with `query` and `glob: "src/**/*.go"`
+- WHEN it runs
+- THEN ohmylaya reads the files itself, scores them, and returns the top ids with excerpts
+- AND the agent never emitted the file contents as tool arguments.
+
+#### Scenario: Screen a URL before reading it
+
+- GIVEN `screen` called with `url` and `purpose`
+- WHEN the recommendation is `block` or `skip`
+- THEN the page text is not returned
+- AND when it is `allow` the text is returned only if `include_text: true`.
+
 ### Requirement: Tool descriptions carry the honest limits
 
 Each tool description MUST state in one sentence what the model is bad at for

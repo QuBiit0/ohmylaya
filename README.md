@@ -39,11 +39,11 @@ action so agents can branch, gate and escalate instead of guessing.
 ## Install (planned)
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/ohmylaya/ohmylaya/main/install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/QuBiit0/ohmylaya/main/install.sh | sh
 ```
 
 ```powershell
-irm https://raw.githubusercontent.com/ohmylaya/ohmylaya/main/install.ps1 | iex
+irm https://raw.githubusercontent.com/QuBiit0/ohmylaya/main/install.ps1 | iex
 ```
 
 Then restart your agent. `ohmylaya doctor` explains anything that is off.

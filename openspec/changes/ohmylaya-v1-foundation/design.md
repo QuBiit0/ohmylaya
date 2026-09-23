@@ -238,9 +238,30 @@ openspec/
   available and skips otherwise.
 - CI matrix: ubuntu, windows, macos; `go vet`, `staticcheck`, `go test -race`.
 
+### D15. Token economics: references, not payloads
+
+An MCP tool call is not free for the agent. Whatever the agent puts in the
+arguments is emitted as output tokens, the most expensive kind. A `rerank`
+that makes the agent paste sixty file bodies into the call would cost more
+than reading them. So tools accept references (`path`, `url`, `glob`) and
+ohmylaya reads the content itself. Savings come from three places, in order of
+size:
+
+1. Content that never enters context: `screen` on a URL that ends in `block`
+   or `skip` saves the whole page and the reasoning about it.
+2. Reading fewer things: `rerank` over a glob returns five ids instead of the
+   agent reading sixty files to find the right one.
+3. Decisions that leave the model entirely: `ohmylaya ask` from scripts, CI
+   and hooks costs zero model tokens.
+
+Where Laya replaces a judgment the model would have made inline on content
+already in context, the saving is small and the gain is the calibrated
+probability, not the tokens. Task T18 measures all of this on real sessions
+before any number appears in the README.
+
 ## Open questions
 
-1. Go module path and GitHub organisation. Placeholder `github.com/ohmylaya/ohmylaya`
+1. Go module path: `github.com/QuBiit0/ohmylaya`, personal account, decided 2026-09-23.
    until the owner decides.
 2. Whether the one-shot scripts live at a vanity domain or stay on raw GitHub
    URLs. Design assumes raw GitHub for v1.

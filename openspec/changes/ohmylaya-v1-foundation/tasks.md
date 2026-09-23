@@ -170,6 +170,17 @@ Setup and Agents; Update, Doctor and Logs).
 
 Review forecast: docs only.
 
+## T18. Token and quality benchmark
+
+- [ ] `bench/` harness that replays recorded agent sessions (fetch, file
+      search, issue triage, claim check) with and without ohmylaya tools and
+      records model input and output tokens, wall time and decision accuracy
+      against hand labels.
+- [ ] Publish `docs/benchmarks.md` with the measured numbers and the corpus.
+      No token or accuracy claim enters the README before this task lands.
+
+Review forecast: about 350 lines plus fixtures.
+
 ## Deferred (v2 candidates)
 
 - Apple Core ML with published compiled buckets.
