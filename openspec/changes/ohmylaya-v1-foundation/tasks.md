@@ -132,9 +132,12 @@ Review forecast: about 300 lines.
 
 ## T10. Config file merge library
 
-- [ ] `internal/cfgfile`: backup, atomic write, `MergeJSON`, `MergeJSONC`,
-      `MergeTOML`, `Remove*` counterparts, unparseable refusal.
-- [ ] Golden round-trip tests.
+- [x] `internal/cfgfile`: backup, atomic write, `SetJSONPath` and
+      `RemoveJSONPath` that splice text so comments and trailing commas
+      survive (JSON and JSONC share one path), `SetTOMLTable` and
+      `RemoveTOMLTable`, unparseable refusal. (2026-09-23)
+- [x] Byte-identical round-trip tests for Claude, OpenCode and Codex
+      samples. (2026-09-23)
 
 Review forecast: about 380 lines.
 
