@@ -1,0 +1,10 @@
+Graphics driver 581.42 release notes
+
+Fixed issues
+- Vulkan applications could crash with VK_ERROR_DEVICE_LOST when a compute queue was
+  submitted while the display went to sleep. [5123390]
+- Corrupted shadows in some DirectX 12 titles after alt-tab. [5120114]
+- The control panel reset the preferred refresh rate after reboot. [5118871]
+
+Known issues
+- HDR screenshots may look washed out in some capture tools.

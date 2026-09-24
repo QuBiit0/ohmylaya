@@ -1,0 +1,117 @@
+{
+ "tool": "check",
+ "cases": [
+  {
+   "id": "green-tests",
+   "input": {
+    "claims": [
+     "all tests passed",
+     "the config package has a failing test"
+    ],
+    "ref": {
+     "path": "testdata/bench/logs/green.log"
+    }
+   },
+   "want": {
+    "verdicts": [
+     "supported",
+     "contradicted"
+    ]
+   }
+  },
+  {
+   "id": "red-tests",
+   "input": {
+    "claims": [
+     "all tests passed",
+     "TestParseConfigDefaults failed",
+     "the render package passed"
+    ],
+    "ref": {
+     "path": "testdata/bench/logs/red.log"
+    }
+   },
+   "want": {
+    "verdicts": [
+     "contradicted",
+     "supported",
+     "supported"
+    ]
+   }
+  },
+  {
+   "id": "failure-at-end",
+   "input": {
+    "claims": [
+     "all tests passed",
+     "TestSpawnTimeout failed"
+    ],
+    "ref": {
+     "path": "testdata/bench/logs/long-red.log"
+    }
+   },
+   "want": {
+    "verdicts": [
+     "contradicted",
+     "supported"
+    ]
+   }
+  },
+  {
+   "id": "npm-audit",
+   "input": {
+    "claims": [
+     "there are no high or critical vulnerabilities",
+     "npm audit fix can fix the reported issues"
+    ],
+    "ref": {
+     "path": "testdata/bench/logs/npm-audit.log"
+    }
+   },
+   "want": {
+    "verdicts": [
+     "contradicted",
+     "supported"
+    ]
+   }
+  },
+  {
+   "id": "docker-build",
+   "input": {
+    "claims": [
+     "the image acme/app:1.4.0 was built",
+     "the base image layer was taken from cache",
+     "the Go build step failed"
+    ],
+    "ref": {
+     "path": "testdata/bench/logs/docker.log"
+    }
+   },
+   "want": {
+    "verdicts": [
+     "supported",
+     "supported",
+     "contradicted"
+    ]
+   }
+  },
+  {
+   "id": "deploy-rollback",
+   "input": {
+    "claims": [
+     "version 2.8.1 is now running on all instances",
+     "the deploy targeted eu-west-1"
+    ],
+    "ref": {
+     "path": "testdata/bench/logs/deploy.log"
+    }
+   },
+   "want": {
+    "verdicts": [
+     "contradicted",
+     "supported"
+    ]
+   }
+  }
+ ]
+}

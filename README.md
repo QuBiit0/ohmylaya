@@ -104,8 +104,8 @@ export `TYPESAFE_API_KEY`.
 v0.1.0. Verified end to end on Windows x64 with Vulkan and CPU. Linux and
 macOS builds are produced by CI and need field reports; see
 [docs/research/engine-verification.md](docs/research/engine-verification.md).
-No token or accuracy claims are made until the benchmark in the roadmap
-lands. Contributions welcome: read [CONTRIBUTING.md](CONTRIBUTING.md).
+Measured accuracy and token savings, including where the tools fail, are in
+[docs/benchmarks.md](docs/benchmarks.md). Contributions welcome: read [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## License
 

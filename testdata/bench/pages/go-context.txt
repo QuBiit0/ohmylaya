@@ -1,0 +1,19 @@
+Canceling HTTP requests with context
+
+Every outgoing request in Go can carry a context.Context. Create the request with
+http.NewRequestWithContext(ctx, method, url, body) and pass a context that you can
+cancel. When the context is canceled or its deadline passes, the transport aborts the
+connection and client.Do returns an error that wraps context.Canceled or
+context.DeadlineExceeded.
+
+    ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+    defer cancel()
+    req, err := http.NewRequestWithContext(ctx, http.MethodGet, "https://example.com", nil)
+    if err != nil {
+        return err
+    }
+    resp, err := http.DefaultClient.Do(req)
+
+Always call cancel, even when the request succeeds, so the timer is released. To stop
+a request from another goroutine, keep the cancel function and call it there. Reading
+the response body also honours the context: a body read after cancellation fails.

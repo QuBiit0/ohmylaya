@@ -1,0 +1,15 @@
+# npm audit report
+
+lodash  <4.17.21
+Severity: high
+Command Injection in lodash - https://github.com/advisories/GHSA-35jh-r3h4-6jhm
+fix available via `npm audit fix`
+node_modules/lodash
+
+minimist  <1.2.6
+Severity: critical
+Prototype Pollution in minimist - https://github.com/advisories/GHSA-xvch-5gv4-984h
+fix available via `npm audit fix`
+node_modules/minimist
+
+2 vulnerabilities (1 high, 1 critical)

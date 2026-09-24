@@ -1,0 +1,97 @@
+{
+ "tool": "classify",
+ "cases": [
+  {
+   "id": "triage-batch-1",
+   "input": {
+    "paths": [
+     "testdata/bench/issues/crash-on-empty-config.md",
+     "testdata/bench/issues/support-zed.md",
+     "testdata/bench/issues/which-model.md",
+     "testdata/bench/issues/readme-broken-link.md",
+     "testdata/bench/issues/port-in-use.md",
+     "testdata/bench/issues/batch-cli.md",
+     "testdata/bench/issues/gpu-needed.md",
+     "testdata/bench/issues/usage-typo.md"
+    ],
+    "labels": [
+     {
+      "key": "bug",
+      "description": "something is broken or behaves incorrectly"
+     },
+     {
+      "key": "feature",
+      "description": "a request for new functionality"
+     },
+     {
+      "key": "question",
+      "description": "the reporter asks how to use or choose something"
+     },
+     {
+      "key": "docs",
+      "description": "documentation is wrong, missing or broken"
+     }
+    ],
+    "instructions": "which label fits this GitHub issue best"
+   },
+   "want": {
+    "labels": {
+     "testdata/bench/issues/crash-on-empty-config.md": "bug",
+     "testdata/bench/issues/support-zed.md": "feature",
+     "testdata/bench/issues/which-model.md": "question",
+     "testdata/bench/issues/readme-broken-link.md": "docs",
+     "testdata/bench/issues/port-in-use.md": "bug",
+     "testdata/bench/issues/batch-cli.md": "feature",
+     "testdata/bench/issues/gpu-needed.md": "question",
+     "testdata/bench/issues/usage-typo.md": "docs"
+    }
+   }
+  },
+  {
+   "id": "triage-batch-2",
+   "input": {
+    "paths": [
+     "testdata/bench/issues/windows-uninstall.md",
+     "testdata/bench/issues/proxy.md",
+     "testdata/bench/issues/rerank-vs-grep.md",
+     "testdata/bench/issues/changelog-missing.md",
+     "testdata/bench/issues/wrong-exit-code.md",
+     "testdata/bench/issues/custom-labels-file.md",
+     "testdata/bench/issues/offline.md",
+     "testdata/bench/issues/contributing-go-version.md"
+    ],
+    "labels": [
+     {
+      "key": "bug",
+      "description": "something is broken or behaves incorrectly"
+     },
+     {
+      "key": "feature",
+      "description": "a request for new functionality"
+     },
+     {
+      "key": "question",
+      "description": "the reporter asks how to use or choose something"
+     },
+     {
+      "key": "docs",
+      "description": "documentation is wrong, missing or broken"
+     }
+    ],
+    "instructions": "which label fits this GitHub issue best"
+   },
+   "want": {
+    "labels": {
+     "testdata/bench/issues/windows-uninstall.md": "bug",
+     "testdata/bench/issues/proxy.md": "feature",
+     "testdata/bench/issues/rerank-vs-grep.md": "question",
+     "testdata/bench/issues/changelog-missing.md": "docs",
+     "testdata/bench/issues/wrong-exit-code.md": "bug",
+     "testdata/bench/issues/custom-labels-file.md": "feature",
+     "testdata/bench/issues/offline.md": "question",
+     "testdata/bench/issues/contributing-go-version.md": "docs"
+    }
+   }
+  }
+ ]
+}

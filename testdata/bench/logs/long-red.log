@@ -1,0 +1,294 @@
+=== RUN   TestParseConfig
+--- PASS: TestParseConfig (0.00s)
+=== RUN   TestParseManifest
+--- PASS: TestParseManifest (0.01s)
+=== RUN   TestParseLayout
+--- PASS: TestParseLayout (0.02s)
+=== RUN   TestParseBudget
+--- PASS: TestParseBudget (0.03s)
+=== RUN   TestParseRequest
+--- PASS: TestParseRequest (0.04s)
+=== RUN   TestParseOptions
+--- PASS: TestParseOptions (0.05s)
+=== RUN   TestLoadConfig
+--- PASS: TestLoadConfig (0.06s)
+=== RUN   TestLoadManifest
+--- PASS: TestLoadManifest (0.07s)
+=== RUN   TestLoadLayout
+--- PASS: TestLoadLayout (0.08s)
+=== RUN   TestLoadBudget
+--- PASS: TestLoadBudget (0.09s)
+=== RUN   TestLoadRequest
+--- PASS: TestLoadRequest (0.00s)
+=== RUN   TestLoadOptions
+--- PASS: TestLoadOptions (0.01s)
+=== RUN   TestMergeConfig
+--- PASS: TestMergeConfig (0.02s)
+=== RUN   TestMergeManifest
+--- PASS: TestMergeManifest (0.03s)
+=== RUN   TestMergeLayout
+--- PASS: TestMergeLayout (0.04s)
+=== RUN   TestMergeBudget
+--- PASS: TestMergeBudget (0.05s)
+=== RUN   TestMergeRequest
+--- PASS: TestMergeRequest (0.06s)
+=== RUN   TestMergeOptions
+--- PASS: TestMergeOptions (0.07s)
+=== RUN   TestRenderConfig
+--- PASS: TestRenderConfig (0.08s)
+=== RUN   TestRenderManifest
+--- PASS: TestRenderManifest (0.09s)
+=== RUN   TestRenderLayout
+--- PASS: TestRenderLayout (0.00s)
+=== RUN   TestRenderBudget
+--- PASS: TestRenderBudget (0.01s)
+=== RUN   TestRenderRequest
+--- PASS: TestRenderRequest (0.02s)
+=== RUN   TestRenderOptions
+--- PASS: TestRenderOptions (0.03s)
+=== RUN   TestResolveConfig
+--- PASS: TestResolveConfig (0.04s)
+=== RUN   TestResolveManifest
+--- PASS: TestResolveManifest (0.05s)
+=== RUN   TestResolveLayout
+--- PASS: TestResolveLayout (0.06s)
+=== RUN   TestResolveBudget
+--- PASS: TestResolveBudget (0.07s)
+=== RUN   TestResolveRequest
+--- PASS: TestResolveRequest (0.08s)
+=== RUN   TestResolveOptions
+--- PASS: TestResolveOptions (0.09s)
+=== RUN   TestApplyConfig
+--- PASS: TestApplyConfig (0.00s)
+=== RUN   TestApplyManifest
+--- PASS: TestApplyManifest (0.01s)
+=== RUN   TestApplyLayout
+--- PASS: TestApplyLayout (0.02s)
+=== RUN   TestApplyBudget
+--- PASS: TestApplyBudget (0.03s)
+=== RUN   TestApplyRequest
+--- PASS: TestApplyRequest (0.04s)
+=== RUN   TestApplyOptions
+--- PASS: TestApplyOptions (0.05s)
+=== RUN   TestProbeConfig
+--- PASS: TestProbeConfig (0.06s)
+=== RUN   TestProbeManifest
+--- PASS: TestProbeManifest (0.07s)
+=== RUN   TestProbeLayout
+--- PASS: TestProbeLayout (0.08s)
+=== RUN   TestProbeBudget
+--- PASS: TestProbeBudget (0.09s)
+=== RUN   TestProbeRequest
+--- PASS: TestProbeRequest (0.00s)
+=== RUN   TestProbeOptions
+--- PASS: TestProbeOptions (0.01s)
+=== RUN   TestSpawnConfig
+--- PASS: TestSpawnConfig (0.02s)
+=== RUN   TestSpawnManifest
+--- PASS: TestSpawnManifest (0.03s)
+=== RUN   TestSpawnLayout
+--- PASS: TestSpawnLayout (0.04s)
+=== RUN   TestSpawnBudget
+--- PASS: TestSpawnBudget (0.05s)
+=== RUN   TestSpawnRequest
+--- PASS: TestSpawnRequest (0.06s)
+=== RUN   TestSpawnOptions
+--- PASS: TestSpawnOptions (0.07s)
+=== RUN   TestParseConfig
+--- PASS: TestParseConfig (0.08s)
+=== RUN   TestParseManifest
+--- PASS: TestParseManifest (0.09s)
+=== RUN   TestParseLayout
+--- PASS: TestParseLayout (0.00s)
+=== RUN   TestParseBudget
+--- PASS: TestParseBudget (0.01s)
+=== RUN   TestParseRequest
+--- PASS: TestParseRequest (0.02s)
+=== RUN   TestParseOptions
+--- PASS: TestParseOptions (0.03s)
+=== RUN   TestLoadConfig
+--- PASS: TestLoadConfig (0.04s)
+=== RUN   TestLoadManifest
+--- PASS: TestLoadManifest (0.05s)
+=== RUN   TestLoadLayout
+--- PASS: TestLoadLayout (0.06s)
+=== RUN   TestLoadBudget
+--- PASS: TestLoadBudget (0.07s)
+=== RUN   TestLoadRequest
+--- PASS: TestLoadRequest (0.08s)
+=== RUN   TestLoadOptions
+--- PASS: TestLoadOptions (0.09s)
+=== RUN   TestMergeConfig
+--- PASS: TestMergeConfig (0.00s)
+=== RUN   TestMergeManifest
+--- PASS: TestMergeManifest (0.01s)
+=== RUN   TestMergeLayout
+--- PASS: TestMergeLayout (0.02s)
+=== RUN   TestMergeBudget
+--- PASS: TestMergeBudget (0.03s)
+=== RUN   TestMergeRequest
+--- PASS: TestMergeRequest (0.04s)
+=== RUN   TestMergeOptions
+--- PASS: TestMergeOptions (0.05s)
+=== RUN   TestRenderConfig
+--- PASS: TestRenderConfig (0.06s)
+=== RUN   TestRenderManifest
+--- PASS: TestRenderManifest (0.07s)
+=== RUN   TestRenderLayout
+--- PASS: TestRenderLayout (0.08s)
+=== RUN   TestRenderBudget
+--- PASS: TestRenderBudget (0.09s)
+=== RUN   TestRenderRequest
+--- PASS: TestRenderRequest (0.00s)
+=== RUN   TestRenderOptions
+--- PASS: TestRenderOptions (0.01s)
+=== RUN   TestResolveConfig
+--- PASS: TestResolveConfig (0.02s)
+=== RUN   TestResolveManifest
+--- PASS: TestResolveManifest (0.03s)
+=== RUN   TestResolveLayout
+--- PASS: TestResolveLayout (0.04s)
+=== RUN   TestResolveBudget
+--- PASS: TestResolveBudget (0.05s)
+=== RUN   TestResolveRequest
+--- PASS: TestResolveRequest (0.06s)
+=== RUN   TestResolveOptions
+--- PASS: TestResolveOptions (0.07s)
+=== RUN   TestApplyConfig
+--- PASS: TestApplyConfig (0.08s)
+=== RUN   TestApplyManifest
+--- PASS: TestApplyManifest (0.09s)
+=== RUN   TestApplyLayout
+--- PASS: TestApplyLayout (0.00s)
+=== RUN   TestApplyBudget
+--- PASS: TestApplyBudget (0.01s)
+=== RUN   TestApplyRequest
+--- PASS: TestApplyRequest (0.02s)
+=== RUN   TestApplyOptions
+--- PASS: TestApplyOptions (0.03s)
+=== RUN   TestProbeConfig
+--- PASS: TestProbeConfig (0.04s)
+=== RUN   TestProbeManifest
+--- PASS: TestProbeManifest (0.05s)
+=== RUN   TestProbeLayout
+--- PASS: TestProbeLayout (0.06s)
+=== RUN   TestProbeBudget
+--- PASS: TestProbeBudget (0.07s)
+=== RUN   TestProbeRequest
+--- PASS: TestProbeRequest (0.08s)
+=== RUN   TestProbeOptions
+--- PASS: TestProbeOptions (0.09s)
+=== RUN   TestSpawnConfig
+--- PASS: TestSpawnConfig (0.00s)
+=== RUN   TestSpawnManifest
+--- PASS: TestSpawnManifest (0.01s)
+=== RUN   TestSpawnLayout
+--- PASS: TestSpawnLayout (0.02s)
+=== RUN   TestSpawnBudget
+--- PASS: TestSpawnBudget (0.03s)
+=== RUN   TestSpawnRequest
+--- PASS: TestSpawnRequest (0.04s)
+=== RUN   TestSpawnOptions
+--- PASS: TestSpawnOptions (0.05s)
+=== RUN   TestParseConfig
+--- PASS: TestParseConfig (0.06s)
+=== RUN   TestParseManifest
+--- PASS: TestParseManifest (0.07s)
+=== RUN   TestParseLayout
+--- PASS: TestParseLayout (0.08s)
+=== RUN   TestParseBudget
+--- PASS: TestParseBudget (0.09s)
+=== RUN   TestParseRequest
+--- PASS: TestParseRequest (0.00s)
+=== RUN   TestParseOptions
+--- PASS: TestParseOptions (0.01s)
+=== RUN   TestLoadConfig
+--- PASS: TestLoadConfig (0.02s)
+=== RUN   TestLoadManifest
+--- PASS: TestLoadManifest (0.03s)
+=== RUN   TestLoadLayout
+--- PASS: TestLoadLayout (0.04s)
+=== RUN   TestLoadBudget
+--- PASS: TestLoadBudget (0.05s)
+=== RUN   TestLoadRequest
+--- PASS: TestLoadRequest (0.06s)
+=== RUN   TestLoadOptions
+--- PASS: TestLoadOptions (0.07s)
+=== RUN   TestMergeConfig
+--- PASS: TestMergeConfig (0.08s)
+=== RUN   TestMergeManifest
+--- PASS: TestMergeManifest (0.09s)
+=== RUN   TestMergeLayout
+--- PASS: TestMergeLayout (0.00s)
+=== RUN   TestMergeBudget
+--- PASS: TestMergeBudget (0.01s)
+=== RUN   TestMergeRequest
+--- PASS: TestMergeRequest (0.02s)
+=== RUN   TestMergeOptions
+--- PASS: TestMergeOptions (0.03s)
+=== RUN   TestRenderConfig
+--- PASS: TestRenderConfig (0.04s)
+=== RUN   TestRenderManifest
+--- PASS: TestRenderManifest (0.05s)
+=== RUN   TestRenderLayout
+--- PASS: TestRenderLayout (0.06s)
+=== RUN   TestRenderBudget
+--- PASS: TestRenderBudget (0.07s)
+=== RUN   TestRenderRequest
+--- PASS: TestRenderRequest (0.08s)
+=== RUN   TestRenderOptions
+--- PASS: TestRenderOptions (0.09s)
+=== RUN   TestResolveConfig
+--- PASS: TestResolveConfig (0.00s)
+=== RUN   TestResolveManifest
+--- PASS: TestResolveManifest (0.01s)
+=== RUN   TestResolveLayout
+--- PASS: TestResolveLayout (0.02s)
+=== RUN   TestResolveBudget
+--- PASS: TestResolveBudget (0.03s)
+=== RUN   TestResolveRequest
+--- PASS: TestResolveRequest (0.04s)
+=== RUN   TestResolveOptions
+--- PASS: TestResolveOptions (0.05s)
+=== RUN   TestApplyConfig
+--- PASS: TestApplyConfig (0.06s)
+=== RUN   TestApplyManifest
+--- PASS: TestApplyManifest (0.07s)
+=== RUN   TestApplyLayout
+--- PASS: TestApplyLayout (0.08s)
+=== RUN   TestApplyBudget
+--- PASS: TestApplyBudget (0.09s)
+=== RUN   TestApplyRequest
+--- PASS: TestApplyRequest (0.00s)
+=== RUN   TestApplyOptions
+--- PASS: TestApplyOptions (0.01s)
+=== RUN   TestProbeConfig
+--- PASS: TestProbeConfig (0.02s)
+=== RUN   TestProbeManifest
+--- PASS: TestProbeManifest (0.03s)
+=== RUN   TestProbeLayout
+--- PASS: TestProbeLayout (0.04s)
+=== RUN   TestProbeBudget
+--- PASS: TestProbeBudget (0.05s)
+=== RUN   TestProbeRequest
+--- PASS: TestProbeRequest (0.06s)
+=== RUN   TestProbeOptions
+--- PASS: TestProbeOptions (0.07s)
+=== RUN   TestSpawnConfig
+--- PASS: TestSpawnConfig (0.08s)
+=== RUN   TestSpawnManifest
+--- PASS: TestSpawnManifest (0.09s)
+=== RUN   TestSpawnLayout
+--- PASS: TestSpawnLayout (0.00s)
+=== RUN   TestSpawnBudget
+--- PASS: TestSpawnBudget (0.01s)
+=== RUN   TestSpawnRequest
+--- PASS: TestSpawnRequest (0.02s)
+=== RUN   TestSpawnOptions
+--- PASS: TestSpawnOptions (0.03s)
+=== RUN   TestSpawnTimeout
+    spawn_test.go:141: engine did not stop within 5s
+--- FAIL: TestSpawnTimeout (5.01s)
+FAIL
+FAIL	github.com/acme/app/internal/spawn	9.870s
+FAIL

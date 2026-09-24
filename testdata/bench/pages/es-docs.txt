@@ -1,0 +1,12 @@
+Configurar variables de entorno en Docker Compose
+
+Podés definir variables en la sección environment de cada servicio o cargarlas desde
+un archivo con env_file. Compose también lee un archivo .env en el directorio del
+proyecto y lo usa para interpolar valores como ${POSTGRES_VERSION} dentro del YAML.
+
+    services:
+      db:
+        image: postgres:${POSTGRES_VERSION}
+        env_file: ./db.env
+
+Las variables definidas en la terminal tienen prioridad sobre las del archivo .env.

@@ -1,0 +1,17 @@
+Configuring TLS in nginx
+
+Put the certificate chain and the private key where nginx can read them, then add a
+server block that listens on 443 with ssl:
+
+    server {
+        listen 443 ssl;
+        http2 on;
+        server_name example.com;
+        ssl_certificate     /etc/ssl/example.com/fullchain.pem;
+        ssl_certificate_key /etc/ssl/example.com/privkey.pem;
+        ssl_protocols TLSv1.2 TLSv1.3;
+        ssl_session_cache shared:SSL:10m;
+    }
+
+Redirect plain HTTP with a second server block that returns 301 to https. Test the
+configuration with nginx -t before reloading with nginx -s reload.

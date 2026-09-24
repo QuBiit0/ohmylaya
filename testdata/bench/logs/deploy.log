@@ -1,0 +1,6 @@
+2026-09-20T14:02:11Z deploy started: service=api version=2.8.1 region=eu-west-1
+2026-09-20T14:02:40Z rolling update: 3/6 instances healthy
+2026-09-20T14:03:05Z health check failed on instance i-0a91 (HTTP 503)
+2026-09-20T14:03:06Z rolling back to version 2.8.0
+2026-09-20T14:03:52Z rollback complete: 6/6 instances healthy on 2.8.0
+2026-09-20T14:03:52Z deploy finished with status ROLLED_BACK

@@ -1,0 +1,19 @@
+=== RUN   TestParseConfig
+--- PASS: TestParseConfig (0.00s)
+=== RUN   TestParseManifest
+--- PASS: TestParseManifest (0.01s)
+=== RUN   TestParseLayout
+--- PASS: TestParseLayout (0.02s)
+=== RUN   TestParseBudget
+--- PASS: TestParseBudget (0.03s)
+=== RUN   TestParseRequest
+--- PASS: TestParseRequest (0.04s)
+=== RUN   TestParseOptions
+--- PASS: TestParseOptions (0.05s)
+=== RUN   TestParseConfigDefaults
+    config_test.go:88: port = 0, want 8080
+--- FAIL: TestParseConfigDefaults (0.00s)
+FAIL
+FAIL	github.com/acme/app/internal/config	0.391s
+ok  	github.com/acme/app/internal/render	0.202s
+FAIL

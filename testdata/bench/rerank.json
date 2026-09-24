@@ -1,0 +1,345 @@
+{
+ "tool": "rerank",
+ "cases": [
+  {
+   "id": "port",
+   "input": {
+    "query": "where does the engine supervisor pick a free TCP port",
+    "paths": [
+     "internal/sidecar/sidecar.go",
+     "internal/acquire/acquire.go",
+     "internal/mcpserver/server.go",
+     "internal/agents/claude.go",
+     "internal/agents/codex.go",
+     "internal/agents/opencode.go",
+     "internal/agents/pi.go",
+     "internal/config/config.go",
+     "internal/tools/screen.go",
+     "internal/tools/rerank.go",
+     "internal/tools/check.go",
+     "internal/manifestgen/engine.go",
+     "internal/manifestgen/models.go",
+     "internal/update/update.go",
+     "internal/install/install.go",
+     "internal/install/uninstall.go",
+     "internal/doctor/doctor.go",
+     "internal/cfgfile/cfgfile.go",
+     "internal/platform/platform.go",
+     "internal/cli/cli.go"
+    ],
+    "top_k": 3
+   },
+   "want": {
+    "relevant": [
+     "internal/sidecar/sidecar.go"
+    ]
+   }
+  },
+  {
+   "id": "engine-sha256",
+   "input": {
+    "query": "verify a downloaded engine file against its sha256 checksum",
+    "paths": [
+     "internal/sidecar/sidecar.go",
+     "internal/acquire/acquire.go",
+     "internal/mcpserver/server.go",
+     "internal/agents/claude.go",
+     "internal/agents/codex.go",
+     "internal/agents/opencode.go",
+     "internal/agents/pi.go",
+     "internal/config/config.go",
+     "internal/tools/screen.go",
+     "internal/tools/rerank.go",
+     "internal/tools/check.go",
+     "internal/manifestgen/engine.go",
+     "internal/manifestgen/models.go",
+     "internal/update/update.go",
+     "internal/install/install.go",
+     "internal/install/uninstall.go",
+     "internal/doctor/doctor.go",
+     "internal/cfgfile/cfgfile.go",
+     "internal/platform/platform.go",
+     "internal/cli/cli.go"
+    ],
+    "top_k": 3
+   },
+   "want": {
+    "relevant": [
+     "internal/acquire/acquire.go"
+    ]
+   }
+  },
+  {
+   "id": "mcp-tools",
+   "input": {
+    "query": "register the MCP tools that coding agents can call",
+    "paths": [
+     "internal/sidecar/sidecar.go",
+     "internal/acquire/acquire.go",
+     "internal/mcpserver/server.go",
+     "internal/agents/claude.go",
+     "internal/agents/codex.go",
+     "internal/agents/opencode.go",
+     "internal/agents/pi.go",
+     "internal/config/config.go",
+     "internal/tools/screen.go",
+     "internal/tools/rerank.go",
+     "internal/tools/check.go",
+     "internal/manifestgen/engine.go",
+     "internal/manifestgen/models.go",
+     "internal/update/update.go",
+     "internal/install/install.go",
+     "internal/install/uninstall.go",
+     "internal/doctor/doctor.go",
+     "internal/cfgfile/cfgfile.go",
+     "internal/platform/platform.go",
+     "internal/cli/cli.go"
+    ],
+    "top_k": 3
+   },
+   "want": {
+    "relevant": [
+     "internal/mcpserver/server.go"
+    ]
+   }
+  },
+  {
+   "id": "codex-config",
+   "input": {
+    "query": "write the MCP server entry into the Codex configuration",
+    "paths": [
+     "internal/sidecar/sidecar.go",
+     "internal/acquire/acquire.go",
+     "internal/mcpserver/server.go",
+     "internal/agents/claude.go",
+     "internal/agents/codex.go",
+     "internal/agents/opencode.go",
+     "internal/agents/pi.go",
+     "internal/config/config.go",
+     "internal/tools/screen.go",
+     "internal/tools/rerank.go",
+     "internal/tools/check.go",
+     "internal/manifestgen/engine.go",
+     "internal/manifestgen/models.go",
+     "internal/update/update.go",
+     "internal/install/install.go",
+     "internal/install/uninstall.go",
+     "internal/doctor/doctor.go",
+     "internal/cfgfile/cfgfile.go",
+     "internal/platform/platform.go",
+     "internal/cli/cli.go"
+    ],
+    "top_k": 3
+   },
+   "want": {
+    "relevant": [
+     "internal/agents/codex.go"
+    ]
+   }
+  },
+  {
+   "id": "injection",
+   "input": {
+    "query": "detect prompt injection in fetched web content",
+    "paths": [
+     "internal/sidecar/sidecar.go",
+     "internal/acquire/acquire.go",
+     "internal/mcpserver/server.go",
+     "internal/agents/claude.go",
+     "internal/agents/codex.go",
+     "internal/agents/opencode.go",
+     "internal/agents/pi.go",
+     "internal/config/config.go",
+     "internal/tools/screen.go",
+     "internal/tools/rerank.go",
+     "internal/tools/check.go",
+     "internal/manifestgen/engine.go",
+     "internal/manifestgen/models.go",
+     "internal/update/update.go",
+     "internal/install/install.go",
+     "internal/install/uninstall.go",
+     "internal/doctor/doctor.go",
+     "internal/cfgfile/cfgfile.go",
+     "internal/platform/platform.go",
+     "internal/cli/cli.go"
+    ],
+    "top_k": 3
+   },
+   "want": {
+    "relevant": [
+     "internal/tools/screen.go"
+    ]
+   }
+  },
+  {
+   "id": "hf-digests",
+   "input": {
+    "query": "refresh model file digests from Hugging Face",
+    "paths": [
+     "internal/sidecar/sidecar.go",
+     "internal/acquire/acquire.go",
+     "internal/mcpserver/server.go",
+     "internal/agents/claude.go",
+     "internal/agents/codex.go",
+     "internal/agents/opencode.go",
+     "internal/agents/pi.go",
+     "internal/config/config.go",
+     "internal/tools/screen.go",
+     "internal/tools/rerank.go",
+     "internal/tools/check.go",
+     "internal/manifestgen/engine.go",
+     "internal/manifestgen/models.go",
+     "internal/update/update.go",
+     "internal/install/install.go",
+     "internal/install/uninstall.go",
+     "internal/doctor/doctor.go",
+     "internal/cfgfile/cfgfile.go",
+     "internal/platform/platform.go",
+     "internal/cli/cli.go"
+    ],
+    "top_k": 3
+   },
+   "want": {
+    "relevant": [
+     "internal/manifestgen/models.go"
+    ]
+   }
+  },
+  {
+   "id": "uninstall",
+   "input": {
+    "query": "remove the installed files and agent registrations on uninstall",
+    "paths": [
+     "internal/sidecar/sidecar.go",
+     "internal/acquire/acquire.go",
+     "internal/mcpserver/server.go",
+     "internal/agents/claude.go",
+     "internal/agents/codex.go",
+     "internal/agents/opencode.go",
+     "internal/agents/pi.go",
+     "internal/config/config.go",
+     "internal/tools/screen.go",
+     "internal/tools/rerank.go",
+     "internal/tools/check.go",
+     "internal/manifestgen/engine.go",
+     "internal/manifestgen/models.go",
+     "internal/update/update.go",
+     "internal/install/install.go",
+     "internal/install/uninstall.go",
+     "internal/doctor/doctor.go",
+     "internal/cfgfile/cfgfile.go",
+     "internal/platform/platform.go",
+     "internal/cli/cli.go"
+    ],
+    "top_k": 3
+   },
+   "want": {
+    "relevant": [
+     "internal/install/uninstall.go"
+    ]
+   }
+  },
+  {
+   "id": "keep-comments",
+   "input": {
+    "query": "edit an agent config file without losing the user's comments",
+    "paths": [
+     "internal/sidecar/sidecar.go",
+     "internal/acquire/acquire.go",
+     "internal/mcpserver/server.go",
+     "internal/agents/claude.go",
+     "internal/agents/codex.go",
+     "internal/agents/opencode.go",
+     "internal/agents/pi.go",
+     "internal/config/config.go",
+     "internal/tools/screen.go",
+     "internal/tools/rerank.go",
+     "internal/tools/check.go",
+     "internal/manifestgen/engine.go",
+     "internal/manifestgen/models.go",
+     "internal/update/update.go",
+     "internal/install/install.go",
+     "internal/install/uninstall.go",
+     "internal/doctor/doctor.go",
+     "internal/cfgfile/cfgfile.go",
+     "internal/platform/platform.go",
+     "internal/cli/cli.go"
+    ],
+    "top_k": 3
+   },
+   "want": {
+    "relevant": [
+     "internal/cfgfile/cfgfile.go"
+    ]
+   }
+  },
+  {
+   "id": "gpu-backend",
+   "input": {
+    "query": "detect which GPU backend this machine can run",
+    "paths": [
+     "internal/sidecar/sidecar.go",
+     "internal/acquire/acquire.go",
+     "internal/mcpserver/server.go",
+     "internal/agents/claude.go",
+     "internal/agents/codex.go",
+     "internal/agents/opencode.go",
+     "internal/agents/pi.go",
+     "internal/config/config.go",
+     "internal/tools/screen.go",
+     "internal/tools/rerank.go",
+     "internal/tools/check.go",
+     "internal/manifestgen/engine.go",
+     "internal/manifestgen/models.go",
+     "internal/update/update.go",
+     "internal/install/install.go",
+     "internal/install/uninstall.go",
+     "internal/doctor/doctor.go",
+     "internal/cfgfile/cfgfile.go",
+     "internal/platform/platform.go",
+     "internal/cli/cli.go"
+    ],
+    "top_k": 3
+   },
+   "want": {
+    "relevant": [
+     "internal/platform/platform.go"
+    ]
+   }
+  },
+  {
+   "id": "self-update",
+   "input": {
+    "query": "check whether a newer ohmylaya release exists",
+    "paths": [
+     "internal/sidecar/sidecar.go",
+     "internal/acquire/acquire.go",
+     "internal/mcpserver/server.go",
+     "internal/agents/claude.go",
+     "internal/agents/codex.go",
+     "internal/agents/opencode.go",
+     "internal/agents/pi.go",
+     "internal/config/config.go",
+     "internal/tools/screen.go",
+     "internal/tools/rerank.go",
+     "internal/tools/check.go",
+     "internal/manifestgen/engine.go",
+     "internal/manifestgen/models.go",
+     "internal/update/update.go",
+     "internal/install/install.go",
+     "internal/install/uninstall.go",
+     "internal/doctor/doctor.go",
+     "internal/cfgfile/cfgfile.go",
+     "internal/platform/platform.go",
+     "internal/cli/cli.go"
+    ],
+    "top_k": 3
+   },
+   "want": {
+    "relevant": [
+     "internal/update/update.go"
+    ]
+   }
+  }
+ ]
+}
