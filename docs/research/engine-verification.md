@@ -115,6 +115,28 @@ Ranking quality note: for "where does the sidecar choose its port?" the
 top result was `local.go` (mentions ports) rather than `sidecar.go`. That is
 the base model's documented weakness, not a bug.
 
+## Long documents: 8,192 tokens is Python-only (checked 2026-09-24)
+
+On 2026-09-24 the Hugging Face README (commits `cf7c54c0` to `55cf4c4e`,
+laya 0.3.18 to 0.3.20) started advertising 8,192-token documents on
+`laya-multilingual` with `max_len=8192`. The checkpoint files did not change.
+The mmBERT encoder uses RoPE, and the Python runtime raises `max_len` per
+call.
+
+laya.cpp r0002 (commit `c785d0b6`) cannot do this. It reads `max_len` and
+`head_max_len` from `rl_agent_config.json`, not from a flag or the request.
+`src/runtime.cpp` refuses to load any other value:
+
+```cpp
+if ((limit!=512 && limit!=1024) || budget<1 || budget>=limit)
+    throw std::runtime_error("Unsupported serving sequence limits");
+```
+
+The manifest therefore keeps `context: 1024` for multilingual. Editing the
+config would stop the engine and fail the file's sha256 check. Revisit this
+when a laya.cpp release accepts larger limits. The Python measurements say
+accuracy holds to about 4,000 tokens and varies beyond that.
+
 ## Linux x64 (pending)
 
 Needs a machine or CI runner with glibc 2.39+. Verify the Vulkan executable
