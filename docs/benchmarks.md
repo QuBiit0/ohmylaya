@@ -7,11 +7,11 @@ small hand-labelled corpus. Measured on 2026-09-24.
 
 - **The checkpoint matters more than anything else.** On this mostly English
   corpus, `english` beats `multilingual` on every tool. The largest gap is
-  `rerank`: 80% against 0 to 10%.
+  `rerank`: 80 to 90% against 0 to 10%.
 - **Only `classify` and `rerank` on `english` are clearly useful.** `check`
   and `screen` are near or below chance on both checkpoints.
 - **Token savings are real but conditional.** `rerank`, `check` and `screen`
-  cut what the agent reads by 23% to 97%. A saving is worth something only
+  cut what the agent reads by 24% to 97%. A saving is worth something only
   when the verdict is right. `classify` on short items costs more tokens than
   reading them.
 
@@ -24,8 +24,8 @@ table gives the range.
 | Tool | Decisions | Chance | multilingual | english | Tokens without | Tokens with | Saved | Median ms (english) |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
 | `check` | 14 | 50% | 36–50% | 57–71% | 2,950 | 1,030 | 65% | 270–640 |
-| `classify` | 16 | 25% | 69% | 75% | 707 | 2,006 | −183% | 260 |
-| `rerank` (top 3 of 20) | 10 | 15% | 0–10% | 80% | 314,820 | 9,520 | 97% | 3,000 |
+| `classify` | 16 | 25% | 69% | 75% | 707 | 2,006 | −184% | 260 |
+| `rerank` (top 3 of 20) | 10 | 15% | 0–10% | 80–90% | 314,820 | 9,520 | 97% | 3,000 |
 | `screen` | 11 | 33% | 0–9% | 45% | 1,442 | 1,103 | 24% | 225 |
 
 - **Chance** is the accuracy of a uniform random answer.
@@ -54,7 +54,10 @@ table gives the range.
 through `ohmylaya ask <tool>`. It uses whatever engine and checkpoint the
 current `OHMYLAYA_HOME` has installed.
 
-Each case scores one or more decisions against hand labels:
+Each case scores one or more decisions against hand labels. A case that
+fails counts its decisions as wrong, stays out of both token columns, and
+makes the run exit non-zero. `-timeout` bounds each case (default 2m).
+
 
 | Tool | Scenario | Label | Scored as |
 |---|---|---|---|

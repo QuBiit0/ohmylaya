@@ -2,14 +2,17 @@ package main
 
 import (
 	"bytes"
+	"cmp"
 	"context"
 	"encoding/json"
 	"fmt"
 	"io"
+	"math"
 	"os"
 	"path/filepath"
 	"slices"
 	"strings"
+	"time"
 	"unicode/utf8"
 
 	"github.com/QuBiit0/ohmylaya/internal/tools"
@@ -17,9 +20,13 @@ import (
 
 // Suite is one corpus file: hand-labelled cases for a single tool.
 type Suite struct {
-	Tool  string `json:"tool"`
-	Cases []Case `json:"cases"`
+	Tool    string        `json:"tool"`
+	Cases   []Case        `json:"cases"`
+	Timeout time.Duration `json:"-"` // per case; zero means defaultTimeout
 }
+
+// defaultTimeout covers an engine start plus rerank's 60 second deadline.
+const defaultTimeout = 2 * time.Minute
 
 // Case is one tool call and its hand label. Input is passed verbatim to
 // `ohmylaya ask`; the shape of Want depends on the tool.
@@ -42,6 +49,9 @@ type Result struct {
 	ElapsedMS      []int64
 	Failures       []string
 }
+
+// Failed reports whether any case failed; such a run is not publishable.
+func (r Result) Failed() bool { return len(r.Failures) > 0 }
 
 // Tokens estimates model tokens as one per four characters. Both sides of
 // every comparison use the same estimate, so the ratio is what matters.
@@ -70,11 +80,16 @@ func LoadSuites(dir string) ([]Suite, error) {
 	return suites, nil
 }
 
-// Run replays a suite. A case whose call or scoring fails counts as wrong.
+// Run replays a suite. A failed case counts its decisions as wrong and is
+// left out of both token columns, so failures never inflate the savings.
 func Run(ctx context.Context, s Suite, run Runner, reader *tools.Reader) Result {
 	r := Result{Tool: s.Tool, Cases: len(s.Cases)}
+	timeout := cmp.Or(s.Timeout, defaultTimeout)
 	for _, c := range s.Cases {
-		if err := r.add(ctx, s.Tool, c, run, reader); err != nil {
+		ctx, cancel := context.WithTimeout(ctx, timeout)
+		err := r.add(ctx, s.Tool, c, run, reader)
+		cancel()
+		if err != nil {
 			r.Failures = append(r.Failures, fmt.Sprintf("%s: %v", c.ID, err))
 		}
 	}
@@ -90,12 +105,15 @@ func (r *Result) add(ctx context.Context, tool string, c Case, run Runner, reade
 	if !ok {
 		return fmt.Errorf("tool %s is not benchmarked", tool)
 	}
-	content, err := baseline(c.Input, reader)
+	r.Total += total
+	var in input
+	if err := json.Unmarshal(c.Input, &in); err != nil {
+		return fmt.Errorf("input: %w", err)
+	}
+	content, err := baseline(in, reader)
 	if err != nil {
 		return err
 	}
-	r.Total += total
-	r.BaselineTokens += Tokens(content)
 	raw, err := run(ctx, tool, c.Input)
 	if err != nil {
 		return err
@@ -108,8 +126,13 @@ func (r *Result) add(ctx context.Context, tool string, c Case, run Runner, reade
 	if err := json.Unmarshal(raw, &out); err != nil {
 		return fmt.Errorf("output: %w", err)
 	}
+	correct, err := out.correct(tool, in.TopK, w)
+	if err != nil {
+		return err
+	}
+	r.Correct += correct
+	r.BaselineTokens += Tokens(content)
 	r.ToolTokens += Tokens(string(c.Input)) + Tokens(compact.String())
-	r.Correct += out.correct(tool, w)
 	r.ElapsedMS = append(r.ElapsedMS, out.Meta.ElapsedMS)
 	return nil
 }
@@ -129,15 +152,12 @@ type input struct {
 	Ref   tools.Ref    `json:"ref"`
 	Items []tools.Item `json:"items"`
 	Paths []string     `json:"paths"`
+	TopK  int          `json:"top_k"`
 }
 
 // baseline returns the content an agent would read to answer the case
 // itself.
-func baseline(raw json.RawMessage, reader *tools.Reader) (string, error) {
-	var in input
-	if err := json.Unmarshal(raw, &in); err != nil {
-		return "", fmt.Errorf("input: %w", err)
-	}
+func baseline(in input, reader *tools.Reader) (string, error) {
 	parts := []string{in.Text}
 	if in.Ref.Path != "" {
 		text, err := reader.ReadFile(in.Ref.Path)
@@ -167,21 +187,44 @@ type output struct {
 	Meta tools.Meta `json:"meta"`
 }
 
-// correct counts the labelled decisions the output got right.
-func (o output) correct(tool string, w want) int {
-	n := 0
-	if tool == "screen" && o.Recommendation.Action == w.Action {
-		n++
+// correct counts the labelled decisions the output got right. It never
+// credits a result past top_k or the same id twice, and it fails when the
+// output does not line up with the labels.
+func (o output) correct(tool string, topK int, w want) (int, error) {
+	if tool == "screen" {
+		if o.Recommendation.Action == w.Action {
+			return 1, nil
+		}
+		return 0, nil
 	}
+	if tool == "check" && len(o.Results) != len(w.Verdicts) {
+		return 0, fmt.Errorf("%d verdicts for %d claims", len(o.Results), len(w.Verdicts))
+	}
+	if tool == "rerank" && topK > 0 && len(o.Results) > topK {
+		o.Results = o.Results[:topK]
+	}
+	n, seen := 0, map[string]bool{}
 	for i, res := range o.Results {
+		if tool == "check" {
+			if res.Verdict == w.Verdicts[i] {
+				n++
+			}
+			continue
+		}
+		if seen[res.ID] {
+			continue
+		}
+		seen[res.ID] = true
+		label, labelled := w.Labels[res.ID]
 		switch {
-		case tool == "classify" && res.Label != "" && w.Labels[res.ID] == res.Label,
-			tool == "check" && i < len(w.Verdicts) && res.Verdict == w.Verdicts[i],
+		case tool == "classify" && !labelled:
+			return 0, fmt.Errorf("result %s is not labelled", res.ID)
+		case tool == "classify" && label == res.Label,
 			tool == "rerank" && slices.Contains(w.Relevant, res.ID):
 			n++
 		}
 	}
-	return n
+	return n, nil
 }
 
 // Report writes a Markdown table with one row per suite.
@@ -204,7 +247,7 @@ func percent(n, d int) string {
 	if d == 0 {
 		return "n/a"
 	}
-	return fmt.Sprintf("%d%%", (100*n+d/2)/d)
+	return fmt.Sprintf("%.0f%%", math.Round(100*float64(n)/float64(d)))
 }
 
 func median(v []int64) int64 {

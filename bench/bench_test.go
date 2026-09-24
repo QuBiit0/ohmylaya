@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/QuBiit0/ohmylaya/internal/tools"
 )
@@ -123,5 +124,60 @@ func TestLoadSuitesReadsTheCorpus(t *testing.T) {
 	}
 	if len(suites) != 2 || suites[0].Tool != "check" || suites[1].Tool != "screen" {
 		t.Fatalf("suites = %+v, want check then screen", suites)
+	}
+}
+
+func TestRunLeavesFailedCasesOutOfTheTokenColumns(t *testing.T) {
+	t.Parallel()
+	s := Suite{Tool: "check", Cases: []Case{{ID: "k", Input: json.RawMessage(`{"text":"evidence"}`), Want: json.RawMessage(`{"verdicts":["supported","contradicted"]}`)}}}
+	r := Run(context.Background(), s, fakeRunner{}.run, tools.NewReader(nil))
+	if r.BaselineTokens != 0 || r.ToolTokens != 0 || r.Total != 2 || !r.Failed() {
+		t.Fatalf("result = %+v, want no tokens, 2 decisions counted wrong, and Failed", r)
+	}
+}
+
+func TestScoreNeverExceedsTheLabels(t *testing.T) {
+	t.Parallel()
+	cases := map[string]struct {
+		tool, in, want, out string
+		correct             int
+		wantErr             string
+	}{
+		"rerank beyond top_k": {"rerank", `{"top_k":1}`, `{"relevant":["b"]}`, `{"results":[{"id":"a"},{"id":"b"}]}`, 0, ""},
+		"rerank duplicate":    {"rerank", `{"top_k":2}`, `{"relevant":["b"]}`, `{"results":[{"id":"b"},{"id":"b"}]}`, 1, ""},
+		"classify unknown id": {"classify", `{}`, `{"labels":{"a":"bug"}}`, `{"results":[{"id":"A","label":"bug"}]}`, 0, "not labelled"},
+		"check missing claim": {"check", `{}`, `{"verdicts":["supported","supported"]}`, `{"results":[{"verdict":"supported"}]}`, 0, "1 verdicts"},
+	}
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			s := Suite{Tool: tc.tool, Cases: []Case{{ID: "c", Input: json.RawMessage(tc.in), Want: json.RawMessage(tc.want)}}}
+			r := Run(context.Background(), s, fakeRunner{tc.in: tc.out}.run, tools.NewReader(nil))
+			if r.Correct != tc.correct {
+				t.Errorf("Correct = %d, want %d", r.Correct, tc.correct)
+			}
+			if got := strings.Join(r.Failures, ";"); (tc.wantErr == "") != (got == "") || !strings.Contains(got, tc.wantErr) {
+				t.Errorf("Failures = %q, want %q", got, tc.wantErr)
+			}
+		})
+	}
+}
+
+func TestRunGivesEachCaseADeadline(t *testing.T) {
+	t.Parallel()
+	s := Suite{Tool: "screen", Timeout: time.Millisecond, Cases: []Case{{ID: "s", Input: json.RawMessage(`{}`), Want: json.RawMessage(`{"action":"allow"}`)}}}
+	hang := func(ctx context.Context, _ string, _ []byte) ([]byte, error) {
+		<-ctx.Done()
+		return nil, ctx.Err()
+	}
+	if r := Run(context.Background(), s, hang, tools.NewReader(nil)); !r.Failed() {
+		t.Fatalf("result = %+v, want the hung case recorded as failed", r)
+	}
+}
+
+func TestPercentRoundsNegativeSavings(t *testing.T) {
+	t.Parallel()
+	if got := percent(707-2006, 707); got != "-184%" {
+		t.Errorf("percent = %s, want -184%%", got)
 	}
 }

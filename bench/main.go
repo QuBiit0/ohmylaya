@@ -21,6 +21,7 @@ import (
 func main() {
 	bin := flag.String("bin", "ohmylaya", "ohmylaya executable")
 	corpus := flag.String("corpus", "testdata/bench", "directory of labelled suites")
+	timeout := flag.Duration("timeout", defaultTimeout, "deadline for each case")
 	flag.Parse()
 	suites, err := LoadSuites(*corpus)
 	if err == nil && len(suites) == 0 {
@@ -32,10 +33,16 @@ func main() {
 	}
 	reader := tools.NewReader(nil)
 	var results []Result
+	failed := false
 	for _, s := range suites {
+		s.Timeout = *timeout
 		results = append(results, Run(context.Background(), s, askRunner(*bin), reader))
+		failed = failed || results[len(results)-1].Failed()
 	}
 	Report(os.Stdout, results)
+	if failed {
+		os.Exit(1)
+	}
 }
 
 // askRunner calls `<bin> ask <tool>` with the input on stdin.

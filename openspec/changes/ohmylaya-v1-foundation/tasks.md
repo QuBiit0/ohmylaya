@@ -232,18 +232,15 @@ Review forecast: docs only.
 
 ## T18. Token and quality benchmark
 
-- [x] `bench/` harness that replays recorded agent sessions (fetch, file
-      search, issue triage, claim check) with and without ohmylaya tools and
-      records model input and output tokens, wall time and decision accuracy
-      against hand labels.
+- [x] `bench/` harness that replays hand-labelled tool calls (fetch, file
+      search, issue triage, claim check) and records estimated tokens with
+      and without the tool, engine time and decision accuracy.
+- [ ] Replay full agent sessions with a frontier model and record real input
+      and output tokens (moved to v2).
 - [x] Publish `docs/benchmarks.md` with the measured numbers and the corpus.
       No token or accuracy claim enters the README before this task lands.
 
 Review forecast: about 350 lines plus fixtures.
-
-Landed offline: the harness replays hand-labelled tool calls, not full agent
-sessions, so it measures tool accuracy and the tokens an agent avoids
-reading. An end-to-end mode with a frontier model is a v2 candidate.
 
 ## Deferred (v2 candidates)
 
