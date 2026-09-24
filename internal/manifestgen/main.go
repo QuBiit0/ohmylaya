@@ -27,6 +27,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/QuBiit0/ohmylaya/internal/cfgfile"
 	"github.com/QuBiit0/ohmylaya/internal/manifest"
 )
 
@@ -84,7 +85,7 @@ func run(ctx context.Context, src Sources, args []string) error {
 	if err != nil {
 		return err
 	}
-	return os.WriteFile(*path, append(out, '\n'), 0o644)
+	return cfgfile.WriteAtomic(*path, append(out, '\n'))
 }
 
 // Generate returns a copy of tmpl refreshed from upstream at the given tag and
@@ -113,6 +114,13 @@ func Generate(ctx context.Context, src Sources, tmpl *manifest.Manifest, tag, re
 	if err := refreshModels(ctx, src, &m); err != nil {
 		return nil, err
 	}
+	// A signature covers the content it was made for, so it survives only when
+	// nothing else changed; otherwise the release must sign again.
+	unsigned := *tmpl
+	unsigned.Signature = ""
+	if m.Signature = ""; reflect.DeepEqual(&unsigned, &m) {
+		m.Signature = tmpl.Signature
+	}
 	return &m, m.Validate()
 }
 
@@ -132,12 +140,26 @@ func getJSON(ctx context.Context, src Sources, url string, v any) error {
 }
 
 func get(ctx context.Context, src Sources, url string) ([]byte, error) {
+	b, _, err := fetch(ctx, src, url)
+	return b, err
+}
+
+// fetch reads a whole response and fails, rather than truncating, when it is
+// larger than maxBody.
+func fetch(ctx context.Context, src Sources, url string) ([]byte, http.Header, error) {
 	resp, err := do(ctx, src, url)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	defer resp.Body.Close()
-	return io.ReadAll(io.LimitReader(resp.Body, maxBody))
+	b, err := io.ReadAll(io.LimitReader(resp.Body, maxBody+1))
+	if err != nil {
+		return nil, nil, fmt.Errorf("GET %s: %w", url, err)
+	}
+	if len(b) > maxBody {
+		return nil, nil, fmt.Errorf("GET %s: response exceeds %d bytes", url, maxBody)
+	}
+	return b, resp.Header, nil
 }
 
 func do(ctx context.Context, src Sources, url string) (*http.Response, error) {

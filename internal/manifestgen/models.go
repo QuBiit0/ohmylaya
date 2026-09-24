@@ -88,22 +88,25 @@ var nextLink = regexp.MustCompile(`<([^>]+)>;\s*rel="next"`)
 // listTree follows the Hugging Face tree API's Link pagination.
 func listTree(ctx context.Context, src Sources, url string) (map[string]hfEntry, error) {
 	tree := map[string]hfEntry{}
+	seen := map[string]bool{}
 	for url != "" {
-		resp, err := do(ctx, src, url)
+		if seen[url] {
+			return nil, fmt.Errorf("tree pagination loops back to %s", url)
+		}
+		seen[url] = true
+		b, header, err := fetch(ctx, src, url)
 		if err != nil {
 			return nil, err
 		}
 		var page []hfEntry
-		err = json.NewDecoder(resp.Body).Decode(&page)
-		resp.Body.Close()
-		if err != nil {
+		if err := json.Unmarshal(b, &page); err != nil {
 			return nil, fmt.Errorf("%s: %w", url, err)
 		}
 		for _, e := range page {
 			tree[e.Path] = e
 		}
 		url = ""
-		if m := nextLink.FindStringSubmatch(resp.Header.Get("Link")); m != nil {
+		if m := nextLink.FindStringSubmatch(header.Get("Link")); m != nil {
 			url = m[1]
 		}
 	}

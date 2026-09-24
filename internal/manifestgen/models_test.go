@@ -4,6 +4,7 @@ import (
 	"context"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/QuBiit0/ohmylaya/internal/manifest"
 )
@@ -35,13 +36,48 @@ func TestGenerateFailsOnInconsistentRepository(t *testing.T) {
 	}{
 		"model file missing":   {func(u *upstream) { delete(u.files, "multilingual/encoder/config.json") }, "not in repository"},
 		"small file corrupted": {func(u *upstream) { u.oid["multilingual/encoder/config.json"] = strings.Repeat("0", 40) }, "blob oid"},
+		"pagination loops":     {func(u *upstream) { u.loopLink = true }, "loops"},
 	}
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 			u := newUpstream()
 			tc.breakIt(u)
-			_, err := Generate(context.Background(), u.serve(t), loadTemplate(t), "r0002", newRev)
+			// The deadline turns a regression in the loop guard into a quick
+			// failure instead of a hung test.
+			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+			defer cancel()
+			_, err := Generate(ctx, u.serve(t), loadTemplate(t), "r0002", newRev)
+			if err == nil || !strings.Contains(err.Error(), tc.wantErr) {
+				t.Fatalf("err = %v, want it to contain %q", err, tc.wantErr)
+			}
+		})
+	}
+}
+
+func TestGenerateFollowsTreePagination(t *testing.T) {
+	t.Parallel()
+	u := newUpstream()
+	u.pageSize = 1
+	if _, err := Generate(context.Background(), u.serve(t), loadTemplate(t), "r0002", newRev); err != nil {
+		t.Fatalf("Generate() with one entry per page: %v", err)
+	}
+}
+
+func TestGenerateRejectsBadRevision(t *testing.T) {
+	t.Parallel()
+	cases := map[string]struct {
+		revision, resolvesTo, wantErr string
+	}{
+		"malformed commit": {"main", "not-a-commit", "resolved to"},
+		"unknown branch":   {"nope", newRev, "404"},
+	}
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			u := newUpstream()
+			u.revSHA = tc.resolvesTo
+			_, err := Generate(context.Background(), u.serve(t), loadTemplate(t), "r0002", tc.revision)
 			if err == nil || !strings.Contains(err.Error(), tc.wantErr) {
 				t.Fatalf("err = %v, want it to contain %q", err, tc.wantErr)
 			}

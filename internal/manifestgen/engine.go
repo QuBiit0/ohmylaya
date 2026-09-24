@@ -50,6 +50,9 @@ func refreshEngine(ctx context.Context, src Sources, m *manifest.Manifest, oldTa
 		if !ok {
 			return fmt.Errorf("%s has no SHA256SUMS entry", name)
 		}
+		if up.Digest == "" {
+			return fmt.Errorf("%s: GitHub reports no digest, so SHA256SUMS cannot be cross-checked", name)
+		}
 		if got := strings.TrimPrefix(up.Digest, "sha256:"); got != want {
 			return fmt.Errorf("%s: SHA256SUMS %s disagrees with the GitHub digest %q", name, want, got)
 		}
