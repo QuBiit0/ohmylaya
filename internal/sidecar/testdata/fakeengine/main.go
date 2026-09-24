@@ -11,6 +11,8 @@ import (
 	"strings"
 	"syscall"
 	"time"
+
+	"github.com/QuBiit0/ohmylaya/internal/sidecar"
 )
 
 func main() {
@@ -34,7 +36,7 @@ func main() {
 
 	if *touch != "" {
 		wd, _ := os.Getwd()
-		body := os.Getenv("OHMYLAYA_HOME") + "\n" + wd + "\n" + os.Getenv("OHMYLAYA_REAP_PID")
+		body := os.Getenv("OHMYLAYA_HOME") + "\n" + wd + "\n" + os.Getenv(sidecar.ReapPIDEnv)
 		// Write then rename so a polling reader never sees a partial file.
 		os.WriteFile(*touch+".tmp", []byte(body), 0o644)
 		os.Rename(*touch+".tmp", *touch)

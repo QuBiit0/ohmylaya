@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/QuBiit0/ohmylaya/internal/buildinfo"
+	"github.com/QuBiit0/ohmylaya/internal/sidecar"
 )
 
 func TestRun(t *testing.T) {
@@ -115,6 +116,22 @@ func TestRunNoArgsPrintsStatusAndUsageOnNonInteractiveStdin(t *testing.T) {
 	for _, want := range []string{"ohmylaya " + buildinfo.Version, "backend vulkan", "Usage: ohmylaya"} {
 		if !strings.Contains(stdout.String(), want) {
 			t.Errorf("stdout missing %q:\n%s", want, stdout.String())
+		}
+	}
+}
+
+func TestReapEnginePID(t *testing.T) {
+	t.Parallel()
+	cases := map[string]int{"4242": 4242, "": 0, "not-a-pid": 0, "-3": 0}
+	for value, want := range cases {
+		getenv := func(key string) string {
+			if key == sidecar.ReapPIDEnv {
+				return value
+			}
+			return ""
+		}
+		if got := reapEnginePID(getenv); got != want {
+			t.Errorf("reapEnginePID(%q) = %d, want %d", value, got, want)
 		}
 	}
 }

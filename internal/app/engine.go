@@ -139,8 +139,13 @@ func (e *Engine) RunReaper(ctx context.Context) {
 	if e.rt.Config.Provider != "local" {
 		return
 	}
-	sidecar.New(e.rt.Layout, e.rt.Config, e.rt.EnginePath()).RunReaper(ctx, time.Minute)
+	sidecar.New(e.rt.Layout, e.rt.Config, e.rt.EnginePath()).RunReaper(ctx, fallbackReapInterval)
 }
+
+// fallbackReapInterval is coarse because the fallback only has to honour
+// the idle timeout (minutes); prompt exit on engine death is the detached
+// reaper's job, see reapPollInterval.
+const fallbackReapInterval = time.Minute
 
 // ReaperCommand is the detached command that stops an idle engine. It is
 // this binary running the hidden reap subcommand. It returns nil when the

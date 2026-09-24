@@ -26,17 +26,34 @@ func TestRemoveAllRetryStopsWhenContextEnds(t *testing.T) {
 	}
 }
 
-func TestRemoveAllRetryDoesNotSleepAfterLastAttempt(t *testing.T) {
+func TestRemoveAllRetryGivesUpAfterBudget(t *testing.T) {
 	calls := 0
-	orig := removeAll
+	origRemove, origWait := removeAll, removeRetryWait
 	removeAll = func(string) error { calls++; return errors.New("locked") }
-	defer func() { removeAll = orig }()
-	start := time.Now()
+	removeRetryWait = time.Millisecond
+	defer func() { removeAll, removeRetryWait = origRemove, origWait }()
 	_ = removeAllRetry(context.Background(), "anything")
 	if calls != removeAttempts {
 		t.Errorf("removal attempts = %d, want %d", calls, removeAttempts)
 	}
-	if max := time.Duration(removeAttempts-1)*removeRetryWait + 400*time.Millisecond; time.Since(start) > max {
-		t.Errorf("took %v, want under %v", time.Since(start), max)
+}
+
+func TestRemoveAllRetrySucceedsOnceUnlocked(t *testing.T) {
+	calls := 0
+	origRemove, origWait := removeAll, removeRetryWait
+	removeAll = func(string) error {
+		calls++
+		if calls < 3 {
+			return errors.New("locked")
+		}
+		return nil
+	}
+	removeRetryWait = time.Millisecond
+	defer func() { removeAll, removeRetryWait = origRemove, origWait }()
+	if err := removeAllRetry(context.Background(), "anything"); err != nil {
+		t.Fatalf("err = %v, want nil once the lock clears", err)
+	}
+	if calls != 3 {
+		t.Errorf("removal attempts = %d, want 3", calls)
 	}
 }

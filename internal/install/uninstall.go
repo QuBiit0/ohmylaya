@@ -63,13 +63,14 @@ func Uninstall(ctx context.Context, deps Deps, opts UninstallOptions) error {
 }
 
 // Removal retry budget: about five seconds in total.
-const (
-	removeAttempts  = 10
+const removeAttempts = 10
+
+// removeAll and removeRetryWait are swapped in tests to simulate a locked
+// path without waiting in real time.
+var (
+	removeAll       = os.RemoveAll
 	removeRetryWait = 500 * time.Millisecond
 )
-
-// removeAll is swapped in tests to simulate a locked path.
-var removeAll = os.RemoveAll
 
 // removeAllRetry retries for a few seconds because Windows keeps a killed
 // process's executable locked briefly after the process is gone. It stops

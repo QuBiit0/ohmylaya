@@ -96,8 +96,7 @@ func RunWithStdin(args []string, stdin io.Reader, stdout, stderr io.Writer) int 
 		if err != nil {
 			return exitFailure
 		}
-		pid, _ := strconv.Atoi(os.Getenv(sidecar.ReapPIDEnv))
-		rt.Reap(context.Background(), pid)
+		rt.Reap(context.Background(), reapEnginePID(os.Getenv))
 		return exitOK
 	case "ask":
 		return runAsk(args[1:], stdin, stdout, stderr)
@@ -116,6 +115,17 @@ func RunWithStdin(args []string, stdin io.Reader, stdout, stderr io.Writer) int 
 		fmt.Fprint(stderr, usage)
 		return exitUsage
 	}
+}
+
+// reapEnginePID reads the engine PID a detached reaper is bound to. It
+// returns 0, meaning no binding (watch whichever engine is recorded),
+// when the variable is missing or invalid.
+func reapEnginePID(getenv func(string) string) int {
+	pid, err := strconv.Atoi(getenv(sidecar.ReapPIDEnv))
+	if err != nil || pid < 0 {
+		return 0
+	}
+	return pid
 }
 
 func runMCP(stderr io.Writer) int {
