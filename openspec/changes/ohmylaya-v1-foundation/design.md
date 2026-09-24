@@ -51,7 +51,13 @@ manifest); ohmylaya extracts only the two DLLs and the license.
 
 Digests come from the release `SHA256SUMS` and are copied into the manifest
 at ohmylaya release time by `go run ./internal/manifestgen`, which fails when
-the upstream checksums file disagrees with a freshly downloaded asset.
+the upstream checksums file disagrees with the sha256 digest GitHub computes
+for each release asset. Cross-checking two independent upstream sources avoids
+downloading about 1.2 GB of executables per run; the installer still verifies
+every download against the manifest. Model files take the Hugging Face LFS
+oid; small non-LFS files are downloaded and checked against their git blob oid.
+`-check` fails when the embedded manifest has drifted from upstream, and
+branch revisions are pinned to their commit.
 
 ### D3. Backend defaults
 

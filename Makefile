@@ -24,9 +24,9 @@ lint: vet
 tidy:
 	go mod tidy
 
-# Refresh the embedded manifest from upstream: make manifest TAG=r0003
+# Refresh the embedded manifest from upstream: make manifest TAG=r0003 REVISION=main
 manifest:
-	go run ./internal/manifestgen $(if $(TAG),-tag $(TAG))
+	go run ./internal/manifestgen $(if $(TAG),-tag $(TAG)) $(if $(REVISION),-revision $(REVISION))
 
 manifest-check:
 	go run ./internal/manifestgen -check

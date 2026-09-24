@@ -9,7 +9,7 @@ import (
 func TestGenerateRefreshesEngineAssets(t *testing.T) {
 	t.Parallel()
 	src := newUpstream().serve(t)
-	m, err := Generate(context.Background(), src, loadTemplate(t), "r0002")
+	m, err := Generate(context.Background(), src, loadTemplate(t), "r0002", "")
 	if err != nil {
 		t.Fatalf("Generate() error = %v", err)
 	}
@@ -46,7 +46,7 @@ func TestGenerateFailsOnInconsistentRelease(t *testing.T) {
 			t.Parallel()
 			u := newUpstream()
 			tc.breakIt(u)
-			_, err := Generate(context.Background(), u.serve(t), loadTemplate(t), "r0002")
+			_, err := Generate(context.Background(), u.serve(t), loadTemplate(t), "r0002", "")
 			if err == nil || !strings.Contains(err.Error(), tc.wantErr) {
 				t.Fatalf("err = %v, want it to contain %q", err, tc.wantErr)
 			}

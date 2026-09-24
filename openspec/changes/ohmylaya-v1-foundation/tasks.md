@@ -38,10 +38,12 @@ Review forecast: about 300 lines, mostly config.
 
 - [x] `internal/manifest`: types, embedded `manifest.json` for r0002 and the
       pinned Hugging Face revision, loader with validation tests. (2026-09-23)
-- [ ] `internal/manifestgen`: fetches upstream `SHA256SUMS` and the HF tree API,
+- [x] `internal/manifestgen`: fetches upstream `SHA256SUMS` and the HF tree API,
       regenerates `manifest.json`, fails on mismatch. Moved to its own PR
       (T2c) to keep T2 under the size limit; digests for r0002 were collected
       by hand and recorded in `docs/research/engine-verification.md`.
+      `go run ./internal/manifestgen -check` confirmed those hand-collected
+      digests against live upstream. (2026-09-24)
 - [x] `internal/platform`: OS/arch, glibc version, library probes
       (`vulkan-1.dll`, `nvcuda.dll`, `libvulkan.so.1`, `libcuda.so.1`),
       recommendation table from the installer spec, with fakeable probes.

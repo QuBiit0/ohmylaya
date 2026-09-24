@@ -1,14 +1,16 @@
 // Command manifestgen regenerates internal/manifest/manifest.json from the
-// upstream laya.cpp release. It runs at ohmylaya release time and is not
-// shipped.
+// upstream laya.cpp release and Hugging Face repository. It runs at ohmylaya
+// release time and is not shipped.
 //
-//	go run ./internal/manifestgen [-tag r0003] [-check]
+//	go run ./internal/manifestgen [-tag r0003] [-revision main] [-check]
 //
 // The current manifest is the template: it decides which platforms and
-// backends are published, the auxiliary archives, and the model files, which
-// are carried over unchanged. Engine names, URLs, sizes and digests are
-// refreshed from upstream. The run fails when upstream contradicts itself: a
-// SHA256SUMS entry that differs from the digest GitHub computed for the asset.
+// backends are published, the auxiliary archives, and each variant's token
+// budget. Names, URLs, sizes and digests are refreshed from upstream. The run
+// fails when upstream contradicts itself: a SHA256SUMS entry that differs from
+// the digest GitHub computed for the asset, or a small model file whose content
+// does not hash to the git blob oid Hugging Face reports. Large files are never
+// downloaded; their digest is the LFS oid.
 package main
 
 import (
@@ -55,6 +57,7 @@ func run(ctx context.Context, src Sources, args []string) error {
 	fs := flag.NewFlagSet("manifestgen", flag.ContinueOnError)
 	path := fs.String("manifest", filepath.Join("internal", "manifest", "manifest.json"), "manifest used as template and written back")
 	tag := fs.String("tag", "", "laya.cpp release tag (default: the manifest's)")
+	revision := fs.String("revision", "", "Hugging Face commit or branch (default: the manifest's)")
 	check := fs.Bool("check", false, "fail when the manifest differs from upstream instead of writing it")
 	if err := fs.Parse(args); err != nil {
 		return err
@@ -67,7 +70,7 @@ func run(ctx context.Context, src Sources, args []string) error {
 	if err != nil {
 		return err
 	}
-	m, err := Generate(ctx, src, tmpl, *tag)
+	m, err := Generate(ctx, src, tmpl, *tag, *revision)
 	if err != nil {
 		return err
 	}
@@ -84,9 +87,9 @@ func run(ctx context.Context, src Sources, args []string) error {
 	return os.WriteFile(*path, append(out, '\n'), 0o644)
 }
 
-// Generate returns a copy of tmpl refreshed from upstream at the given tag; an
-// empty tag keeps the template's.
-func Generate(ctx context.Context, src Sources, tmpl *manifest.Manifest, tag string) (*manifest.Manifest, error) {
+// Generate returns a copy of tmpl refreshed from upstream at the given tag and
+// revision; empty values keep the template's.
+func Generate(ctx context.Context, src Sources, tmpl *manifest.Manifest, tag, revision string) (*manifest.Manifest, error) {
 	b, err := json.Marshal(tmpl)
 	if err != nil {
 		return nil, err
@@ -102,10 +105,19 @@ func Generate(ctx context.Context, src Sources, tmpl *manifest.Manifest, tag str
 	if err := refreshEngine(ctx, src, &m, oldTag); err != nil {
 		return nil, err
 	}
+	if revision != "" {
+		if m.Models.Revision, err = resolveRevision(ctx, src, m.Models.Repo, revision); err != nil {
+			return nil, err
+		}
+	}
+	if err := refreshModels(ctx, src, &m); err != nil {
+		return nil, err
+	}
 	return &m, m.Validate()
 }
 
-// maxBody bounds everything manifestgen reads into memory.
+// maxBody bounds everything manifestgen reads into memory: API documents,
+// SHA256SUMS and the small model files.
 const maxBody = 16 << 20
 
 func getJSON(ctx context.Context, src Sources, url string, v any) error {
