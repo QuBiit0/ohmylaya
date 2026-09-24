@@ -91,9 +91,14 @@ func (v *Variant) TotalSize() int64 {
 
 // Load parses and validates the embedded manifest.
 func Load() (*Manifest, error) {
+	return Parse(embedded)
+}
+
+// Parse decodes and validates a manifest document.
+func Parse(b []byte) (*Manifest, error) {
 	var m Manifest
-	if err := json.Unmarshal(embedded, &m); err != nil {
-		return nil, fmt.Errorf("manifest: parse embedded: %w", err)
+	if err := json.Unmarshal(b, &m); err != nil {
+		return nil, fmt.Errorf("manifest: parse: %w", err)
 	}
 	if err := m.Validate(); err != nil {
 		return nil, err

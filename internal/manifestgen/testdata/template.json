@@ -1,0 +1,47 @@
+{
+  "schema": 1,
+  "engine": {
+    "project": "up/engine",
+    "tag": "r0001",
+    "assets": [
+      {
+        "os": "linux", "arch": "amd64", "backend": "vulkan",
+        "name": "laya-r0001-linux-amd64-vulkan",
+        "url": "https://example.invalid/r0001/laya-r0001-linux-amd64-vulkan",
+        "size": 1,
+        "sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+        "supports_cpu": true
+      },
+      {
+        "os": "windows", "arch": "amd64", "backend": "cuda",
+        "name": "laya-r0001-windows-amd64-cuda.exe",
+        "url": "https://example.invalid/r0001/laya-r0001-windows-amd64-cuda.exe",
+        "size": 1,
+        "sha256": "2222222222222222222222222222222222222222222222222222222222222222",
+        "supports_cpu": true,
+        "extra": {
+          "name": "cublas.zip",
+          "url": "https://example.invalid/cublas.zip",
+          "sha256": "3333333333333333333333333333333333333333333333333333333333333333",
+          "members": ["bin/cublas64_13.dll"]
+        }
+      }
+    ]
+  },
+  "models": {
+    "repo": "up/model",
+    "revision": "0000000000000000000000000000000000000000",
+    "variants": {
+      "multilingual": {
+        "prefix": "multilingual/",
+        "context": 1024,
+        "head_max_len": 256,
+        "files": [
+          {"path": "model.safetensors", "size": 1, "sha256": "4444444444444444444444444444444444444444444444444444444444444444"},
+          {"path": "encoder/config.json", "size": 1, "sha256": "5555555555555555555555555555555555555555555555555555555555555555"}
+        ]
+      }
+    }
+  },
+  "signature": ""
+}

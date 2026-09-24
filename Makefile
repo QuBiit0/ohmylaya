@@ -1,4 +1,4 @@
-.PHONY: build test lint vet tidy clean
+.PHONY: build test lint vet tidy clean manifest manifest-check
 
 BIN := bin/ohmylaya
 VERSION ?= dev
@@ -23,6 +23,13 @@ lint: vet
 
 tidy:
 	go mod tidy
+
+# Refresh the embedded manifest from upstream: make manifest TAG=r0003
+manifest:
+	go run ./internal/manifestgen $(if $(TAG),-tag $(TAG))
+
+manifest-check:
+	go run ./internal/manifestgen -check
 
 clean:
 	rm -rf bin dist
