@@ -62,14 +62,15 @@ func Uninstall(ctx context.Context, deps Deps, opts UninstallOptions) error {
 	return nil
 }
 
-// Removal retry budget: about five seconds in total.
+// removeAttempts and removeRetryWait form the removal retry budget: ten
+// attempts 500 ms apart, about five seconds in total.
 const removeAttempts = 10
 
 // removeAll and removeRetryWait are swapped in tests to simulate a locked
-// path without waiting in real time.
+// path and count waits without waiting in real time.
 var (
 	removeAll       = os.RemoveAll
-	removeRetryWait = 500 * time.Millisecond
+	removeRetryWait = func() <-chan time.Time { return time.After(500 * time.Millisecond) }
 )
 
 // removeAllRetry retries for a few seconds because Windows keeps a killed
@@ -84,7 +85,7 @@ func removeAllRetry(ctx context.Context, path string) error {
 		select {
 		case <-ctx.Done():
 			return err
-		case <-time.After(removeRetryWait):
+		case <-removeRetryWait():
 		}
 	}
 }

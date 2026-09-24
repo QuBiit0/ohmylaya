@@ -37,6 +37,12 @@ func TestRunReaperReturnsWhenContextEnds(t *testing.T) {
 		e.RunReaper(ctx)
 		close(done)
 	}()
+	// For the local provider it must keep running until ctx ends.
+	select {
+	case <-done:
+		t.Fatal("RunReaper returned before ctx ended")
+	case <-time.After(200 * time.Millisecond):
+	}
 	cancel()
 	select {
 	case <-done:
