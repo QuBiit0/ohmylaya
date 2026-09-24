@@ -97,14 +97,19 @@ Root causes and fixes:
 
 - Eight rows of 1024 tokens in one `/predict` call take 68 s on the 4 GB
   RTX 3050 Laptop; four rows take 0.9 s and eight short rows 0.7 s. Engine
-  calls are now packed by total state characters as well as question count.
+  calls are now packed by total state characters as well as question count
+  (commit 3f06717).
 - Engines started by short-lived commands (`ask`) had nobody to stop them.
-  Every engine start now spawns a detached `ohmylaya reap` that stops the
-  engine on idle and exits when it is gone.
+  Every engine start now spawns a detached `ohmylaya reap` bound to that
+  engine's PID. It stops the engine on idle and exits when the engine is
+  gone or replaced. Long-lived `mcp` sessions also keep an in-process
+  reaper as a fallback.
 - Windows keeps a killed process's executable locked for a moment; uninstall
-  now retries removal for a few seconds.
-- Doctor test fake engines leaked to ports 45600..45603 before the smoke
-  check stopped what it started; fixed in the same change.
+  now retries removal for a few seconds. The reaper runs from the OS temp
+  directory so it never holds the home directory open.
+- Fake engines found on ports 45600..45603 were left over from test runs of
+  older builds. The doctor smoke check already stops what it starts; no code
+  change was needed.
 
 Ranking quality note: for "where does the sidecar choose its port?" the
 top result was `local.go` (mentions ports) rather than `sidecar.go`. That is

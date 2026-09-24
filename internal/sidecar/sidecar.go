@@ -245,7 +245,7 @@ func (s *Supervisor) spawn(ctx context.Context) (State, error) {
 			if err := WriteState(s.layout, st); err != nil {
 				return State{}, err
 			}
-			s.spawnReaper()
+			s.spawnReaper(st.PID)
 			return st, nil
 		}
 	}
@@ -256,7 +256,7 @@ func (s *Supervisor) spawn(ctx context.Context) (State, error) {
 // spawnReaper starts the detached reaper command, if configured. Failures
 // are logged and otherwise ignored: the engine still works, it just will
 // not stop on idle until another ohmylaya process runs the reaper.
-func (s *Supervisor) spawnReaper() {
+func (s *Supervisor) spawnReaper(enginePID int) {
 	if len(s.reaper) == 0 {
 		return
 	}
@@ -264,7 +264,9 @@ func (s *Supervisor) spawnReaper() {
 	// Outside Home: Windows cannot delete a process's current directory,
 	// and uninstall removes Home while the reaper may still be running.
 	cmd.Dir = os.TempDir()
-	cmd.Env = append(os.Environ(), "OHMYLAYA_HOME="+s.layout.Home)
+	cmd.Env = append(os.Environ(),
+		"OHMYLAYA_HOME="+s.layout.Home,
+		ReapPIDEnv+"="+strconv.Itoa(enginePID))
 	detach(cmd)
 	if err := cmd.Start(); err != nil {
 		if f, ferr := os.OpenFile(filepath.Join(s.layout.State, logFile), os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o644); ferr == nil {
@@ -276,9 +278,14 @@ func (s *Supervisor) spawnReaper() {
 	go func() { _ = cmd.Wait() }()
 }
 
+// ReapPIDEnv carries the PID of the engine a detached reaper watches.
+const ReapPIDEnv = "OHMYLAYA_REAP_PID"
+
 // RunReaperUntilGone checks idleness on an interval and returns once the
-// recorded engine is no longer alive.
-func (s *Supervisor) RunReaperUntilGone(ctx context.Context, every time.Duration) {
+// recorded engine is no longer alive. When enginePID is non-zero it also
+// returns once the recorded engine is a different one, so reapers do not
+// pile up across engine restarts.
+func (s *Supervisor) RunReaperUntilGone(ctx context.Context, every time.Duration, enginePID int) {
 	t := time.NewTicker(every)
 	defer t.Stop()
 	for {
@@ -287,7 +294,7 @@ func (s *Supervisor) RunReaperUntilGone(ctx context.Context, every time.Duration
 			return
 		case <-t.C:
 			st, err := ReadState(s.layout)
-			if err != nil || !alive(st.PID) {
+			if err != nil || !alive(st.PID) || (enginePID != 0 && st.PID != enginePID) {
 				return
 			}
 			if stopped, _ := s.ReapIfIdle(ctx); stopped {

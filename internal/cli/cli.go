@@ -14,6 +14,7 @@ import (
 	"os/exec"
 	"os/signal"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"text/tabwriter"
 	"time"
@@ -29,6 +30,7 @@ import (
 	"github.com/QuBiit0/ohmylaya/internal/manifest"
 	"github.com/QuBiit0/ohmylaya/internal/mcpserver"
 	"github.com/QuBiit0/ohmylaya/internal/platform"
+	"github.com/QuBiit0/ohmylaya/internal/sidecar"
 	"github.com/QuBiit0/ohmylaya/internal/skill"
 	"github.com/QuBiit0/ohmylaya/internal/tools"
 	"github.com/QuBiit0/ohmylaya/internal/update"
@@ -94,7 +96,8 @@ func RunWithStdin(args []string, stdin io.Reader, stdout, stderr io.Writer) int 
 		if err != nil {
 			return exitFailure
 		}
-		rt.Reap(context.Background())
+		pid, _ := strconv.Atoi(os.Getenv(sidecar.ReapPIDEnv))
+		rt.Reap(context.Background(), pid)
 		return exitOK
 	case "ask":
 		return runAsk(args[1:], stdin, stdout, stderr)
@@ -125,6 +128,7 @@ func runMCP(stderr io.Writer) int {
 	defer stop()
 	engine := app.NewEngine(rt)
 	defer engine.Close()
+	go engine.RunReaper(ctx)
 	if err := mcpserver.Run(ctx, engine, buildinfo.Version); err != nil && ctx.Err() == nil {
 		fmt.Fprintln(stderr, "ohmylaya mcp:", err)
 		return exitFailure

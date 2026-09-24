@@ -47,7 +47,7 @@ func Uninstall(ctx context.Context, deps Deps, opts UninstallOptions) error {
 	}
 	if opts.KeepModels {
 		for _, sub := range []string{deps.Layout.Bin, deps.Layout.State, deps.Layout.Backups, deps.Layout.Skills, deps.Layout.ConfigPath} {
-			_ = removeAllRetry(sub)
+			_ = removeAllRetry(ctx, sub)
 		}
 		fmt.Fprintf(deps.Out, "Removed everything under %s except models\n", deps.Layout.Home)
 		return nil
@@ -55,22 +55,35 @@ func Uninstall(ctx context.Context, deps Deps, opts UninstallOptions) error {
 	if filepath.Base(deps.Layout.Home) == "" || deps.Layout.Home == string(filepath.Separator) {
 		return fmt.Errorf("uninstall: refusing to remove %q", deps.Layout.Home)
 	}
-	if err := removeAllRetry(deps.Layout.Home); err != nil {
+	if err := removeAllRetry(ctx, deps.Layout.Home); err != nil {
 		return err
 	}
 	fmt.Fprintf(deps.Out, "Removed %s\n", deps.Layout.Home)
 	return nil
 }
 
+// Removal retry budget: about five seconds in total.
+const (
+	removeAttempts  = 10
+	removeRetryWait = 500 * time.Millisecond
+)
+
+// removeAll is swapped in tests to simulate a locked path.
+var removeAll = os.RemoveAll
+
 // removeAllRetry retries for a few seconds because Windows keeps a killed
-// process's executable locked briefly after the process is gone.
-func removeAllRetry(path string) error {
+// process's executable locked briefly after the process is gone. It stops
+// early when ctx ends.
+func removeAllRetry(ctx context.Context, path string) error {
 	var err error
-	for attempt := 0; attempt < 10; attempt++ {
-		if err = os.RemoveAll(path); err == nil {
-			return nil
+	for attempt := 1; ; attempt++ {
+		if err = removeAll(path); err == nil || attempt == removeAttempts {
+			return err
 		}
-		time.Sleep(500 * time.Millisecond)
+		select {
+		case <-ctx.Done():
+			return err
+		case <-time.After(removeRetryWait):
+		}
 	}
-	return err
 }

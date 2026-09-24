@@ -34,7 +34,10 @@ func main() {
 
 	if *touch != "" {
 		wd, _ := os.Getwd()
-		os.WriteFile(*touch, []byte(os.Getenv("OHMYLAYA_HOME")+"\n"+wd), 0o644)
+		body := os.Getenv("OHMYLAYA_HOME") + "\n" + wd + "\n" + os.Getenv("OHMYLAYA_REAP_PID")
+		// Write then rename so a polling reader never sees a partial file.
+		os.WriteFile(*touch+".tmp", []byte(body), 0o644)
+		os.Rename(*touch+".tmp", *touch)
 		return
 	}
 	if *crash || os.Getenv("FAKEENGINE_CRASH") == "1" {

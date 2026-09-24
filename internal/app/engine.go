@@ -132,8 +132,19 @@ func (e *Engine) Close() {
 	}
 }
 
+// RunReaper runs the in-process idle reaper for the local provider until
+// ctx ends. Long-lived sessions keep it as a fallback for engines whose
+// detached reaper never started or was killed.
+func (e *Engine) RunReaper(ctx context.Context) {
+	if e.rt.Config.Provider != "local" {
+		return
+	}
+	sidecar.New(e.rt.Layout, e.rt.Config, e.rt.EnginePath()).RunReaper(ctx, time.Minute)
+}
+
 // ReaperCommand is the detached command that stops an idle engine. It is
-// this binary running the hidden reap subcommand.
+// this binary running the hidden reap subcommand. It returns nil when the
+// executable cannot be resolved; engines then rely on RunReaper.
 func ReaperCommand() []string {
 	exe, err := os.Executable()
 	if err != nil {
@@ -149,7 +160,7 @@ func ReaperCommand() []string {
 // exits well within uninstall's retry window, releasing its executable.
 const reapPollInterval = 2 * time.Second
 
-// Reap runs the idle reaper until the recorded engine is gone.
-func (r *Runtime) Reap(ctx context.Context) {
-	sidecar.New(r.Layout, r.Config, r.EnginePath()).RunReaperUntilGone(ctx, reapPollInterval)
+// Reap runs the idle reaper until engine enginePID is gone or replaced.
+func (r *Runtime) Reap(ctx context.Context, enginePID int) {
+	sidecar.New(r.Layout, r.Config, r.EnginePath()).RunReaperUntilGone(ctx, reapPollInterval, enginePID)
 }

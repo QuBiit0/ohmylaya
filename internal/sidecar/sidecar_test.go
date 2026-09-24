@@ -268,7 +268,11 @@ func TestSpawnLaunchesDetachedReaperWithHome(t *testing.T) {
 	deadline := time.Now().Add(5 * time.Second)
 	for time.Now().Before(deadline) {
 		if b, err := os.ReadFile(marker); err == nil {
-			home, wd, _ := strings.Cut(string(b), "\n")
+			parts := strings.SplitN(string(b)+"\n\n", "\n", 4)
+			home, wd, pid := parts[0], parts[1], parts[2]
+			if pid != strconv.Itoa(h.PID) {
+				t.Errorf("reaper OHMYLAYA_REAP_PID = %q, want %d", pid, h.PID)
+			}
 			if home != s.layout.Home {
 				t.Errorf("reaper OHMYLAYA_HOME = %q, want %q", home, s.layout.Home)
 			}
@@ -284,6 +288,31 @@ func TestSpawnLaunchesDetachedReaperWithHome(t *testing.T) {
 	t.Fatal("reaper command was not started")
 }
 
+func TestRunReaperUntilGoneExitsWhenEngineReplaced(t *testing.T) {
+	s := newSupervisor(t)
+	s.cfg.IdleTimeout.Duration = time.Hour
+	h, err := s.Ensure(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer h.Close()
+	done := make(chan struct{})
+	go func() {
+		// A reaper spawned for an earlier engine must not keep watching
+		// the live replacement, or reapers pile up across restarts.
+		s.RunReaperUntilGone(context.Background(), 50*time.Millisecond, h.PID+1)
+		close(done)
+	}()
+	select {
+	case <-done:
+	case <-time.After(3 * time.Second):
+		t.Fatal("reaper kept running for an engine it did not spawn")
+	}
+	if !alive(h.PID) {
+		t.Error("reaper stopped an engine it did not spawn")
+	}
+}
+
 func TestRunReaperUntilGoneStopsIdleEngineAndReturns(t *testing.T) {
 	s := newSupervisor(t)
 	s.cfg.IdleTimeout.Duration = 100 * time.Millisecond
@@ -295,7 +324,7 @@ func TestRunReaperUntilGoneStopsIdleEngineAndReturns(t *testing.T) {
 	h.Close()
 	done := make(chan struct{})
 	go func() {
-		s.RunReaperUntilGone(context.Background(), 150*time.Millisecond)
+		s.RunReaperUntilGone(context.Background(), 150*time.Millisecond, pid)
 		close(done)
 	}()
 	select {
