@@ -235,8 +235,6 @@ Review forecast: docs only.
 - [x] `bench/` harness that replays hand-labelled tool calls (fetch, file
       search, issue triage, claim check) and records estimated tokens with
       and without the tool, engine time and decision accuracy.
-- [ ] Replay full agent sessions with a frontier model and record real input
-      and output tokens (moved to v2).
 - [x] Publish `docs/benchmarks.md` with the measured numbers and the corpus.
       No token or accuracy claim enters the README before this task lands.
 
@@ -244,6 +242,8 @@ Review forecast: about 350 lines plus fixtures.
 
 ## Deferred (v2 candidates)
 
+- Benchmark mode that replays full agent sessions with a frontier model and
+  records real input and output tokens.
 - Apple Core ML with published compiled buckets.
 - Calibration store and temperature fitting from user-labelled outcomes.
 - Multi-process routing across checkpoints by language.
