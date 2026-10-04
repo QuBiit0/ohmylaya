@@ -186,3 +186,23 @@ func text(res *mcp.CallToolResult) string {
 	}
 	return b.String()
 }
+
+// The weak tools must say so where hosts without the skill can see it, with
+// the measured accuracy from docs/benchmarks.md.
+func TestWeakToolDescriptionsStateMeasuredAccuracy(t *testing.T) {
+	t.Parallel()
+	for tool, want := range map[string]string{"screen": "45%", "check": "57-71%"} {
+		d := descriptions[tool]
+		if !strings.Contains(d, want) || !strings.Contains(d, "hint") {
+			t.Errorf("%s description = %q, want it to call itself a hint and cite %s", tool, d, want)
+		}
+	}
+	for tool, d := range descriptions {
+		if strings.Contains(d, "2,500") {
+			t.Errorf("%s description cites a 2,500-character budget; english truncates near 1,200", tool)
+		}
+	}
+	if d := descriptions["screen"]; !strings.Contains(d, "not proof") {
+		t.Errorf("screen description = %q, want it to say allow is not proof of safety", d)
+	}
+}

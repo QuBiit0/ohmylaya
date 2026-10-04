@@ -12,8 +12,9 @@ card and from measurements recorded in `docs/research/`.
   "claim": "..."}`.
 - Describe options. `{"billing": "invoices, payments, refunds"}` beats
   `{"billing": null}`.
-- Keep the state under about 2,500 characters. The engine truncates from the
-  end, and the answer is usually at the end.
+- Keep the state under about 1,200 characters on `english` (about 2,500 on
+  the others). The engine truncates from the end, and the answer is often at
+  the end.
 
 ## screen
 

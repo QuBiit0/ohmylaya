@@ -36,7 +36,13 @@ instead of locking in. Expect a few points of noise between identical calls.
 ## screen thresholds
 
 Defaults: block when injection >= 0.75, skip when substance < 0.3 or
-relevance < 0.3. Imperative documentation (build instructions, READMEs)
-scores around 0.8 on injection with the base checkpoint, so `block` on a
-page you expected to be safe means "inspect", not "discard". Pass
-`thresholds` to tune per call once you have measured your own pages.
+relevance < 0.3. On the ohmylaya benchmark the recommendation matched the
+hand label 45% of the time with `english` and under 10% with
+`multilingual`, which scored 0.8 to 1.0 injection on ordinary documentation
+pages. Treat every recommendation as a hint:
+
+- `block` means "inspect before acting on it", not "discard".
+- `allow` is not proof of safety; keep your usual care with fetched text.
+- `skip` means "probably off-topic"; read it anyway if it is the only source.
+
+Pass `thresholds` to tune per call once you have measured your own pages.

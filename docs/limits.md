@@ -25,7 +25,9 @@ recorded in `docs/research/`. None of it is softened.
   `auto` as "cheap to undo" and `review` as "ask".
 - `screen` false positives: the multilingual checkpoint scored the laya.cpp
   README at 0.75 to 0.81 injection probability against 0.96 for a real
-  injection. `block` means inspect.
+  injection. On the benchmark `screen` matched the label 45% of the time on
+  `english` and under 10% on `multilingual`. It is a hint: `block` means
+  inspect, and `allow` is not proof of safety.
 - `action.act_probability` from the engine carries no signal and is ignored.
 - One engine process serves one checkpoint. No automatic language routing.
 - macOS runs the CPU backend in this release; Core ML needs exported model

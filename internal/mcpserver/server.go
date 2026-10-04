@@ -31,11 +31,11 @@ var descriptions = map[string]string{
 	"classify": "Assign each item to one label from your own catalogue, in batches of up to 50, with a probability per label and an auto/review action. Accepts items, paths or a glob so file contents never pass through your context. " +
 		"Limits: describe labels, keep under 20, and calibrate the threshold on your data; near chance on unfamiliar domains without descriptions.",
 	"check": "Verify claims against evidence (inline, path or url): returns supported/contradicted with p_yes and an auto/review action per claim. Good for 'tests passed' against a log or a summary against its source. " +
-		"Limits: evidence longer than about 2,500 characters is truncated from the end; it judges support, not truth.",
+		"Limits: a hint, not a verdict: 57-71% correct on the ohmylaya benchmark with the english checkpoint. Long evidence is truncated from the end (see meta.truncated); it judges support, not truth.",
 	"screen": "Judge text or a url/path before it enters your context: probability of prompt injection, substance and relevance to your purpose, with a block/skip/allow recommendation. Blocked or skipped content is never returned. " +
-		"Limits: long pages are judged on their first ~2,500 characters; the base model over-reads imperative documentation as injection, so treat block as a strong signal to verify, skip as advisory, and calibrate thresholds on your own pages.",
+		"Limits: a weak hint, right 45% of the time on the ohmylaya benchmark with the english checkpoint. It reads imperative documentation as injection and can allow a real one. Read the content yourself when you need it: block means inspect, skip is advisory, allow is not proof of safety. Long pages are judged on their beginning only.",
 	"rerank": "Order up to 100 candidates (inline, paths or glob) by relevance to a query and return the top k with excerpts, without embeddings or an index. " +
-		"Limits: each candidate is judged on its first ~2,500 characters; scores are relative, not calibrated across queries.",
+		"Limits: each candidate is judged on its beginning only (about 1,200 characters on english), so long files are ranked by their header; scores are relative, not calibrated across queries.",
 }
 
 // New builds the MCP server with the five tools.

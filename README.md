@@ -29,10 +29,10 @@ question on a laptop GPU, hundreds of milliseconds on a CPU.
 
 | Tool | Use it to |
 |---|---|
-| `screen` | judge a URL or file for prompt injection, substance and relevance before it enters context |
+| `screen` | get a hint on whether a URL or file looks like prompt injection, thin or off-topic; weak (45% on our benchmark), so inspect instead of trusting it |
 | `rerank` | order files or candidates by relevance to a query, no embeddings or index |
 | `classify` | label items against your own catalogue, in batches |
-| `check` | verify claims against evidence, such as "tests passed" against the log |
+| `check` | get a hint on whether claims match evidence, such as "tests passed" against the log; 57 to 71% on our benchmark |
 | `decide` | ask any typed question when you need the raw primitive |
 
 Tools accept `path`, `url` and `glob` references and read the content
