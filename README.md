@@ -16,6 +16,13 @@ as an MCP server plus an agent skill, so your agent can rank files, label
 items and sanity-check claims locally, with a probability attached, instead
 of spending frontier-model tokens. No Python, no PyTorch, no Node.
 
+![ohmylaya: the TUI status, agents and doctor screens, then a real classify call](docs/assets/demo.gif)
+
+<sub>Recorded with [VHS](https://github.com/charmbracelet/vhs) on a clean GitHub
+Linux runner, CPU backend, right after the one-shot install. The output is
+real; `review` means the answer fell below the confidence threshold. See
+`.github/workflows/demo.yml`.</sub>
+
 ## Quick start
 
 Linux and macOS:
