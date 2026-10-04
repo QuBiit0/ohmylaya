@@ -51,9 +51,13 @@ jobs:
           EOF
 
       # Start the engine so the recording shows it running and pays no
-      # cold start.
+      # cold start. Wait first: on Linux the sockets of the engine the
+      # install smoke test stopped hold port 45292 for up to a minute, which
+      # moves the engine to 45293 and makes the doctor warn about the port.
       - name: Warm up
-        run: ohmylaya ask classify < triage.json | jq -e '.results | length == 3 and all(.id and .label and .action)' 
+        run: |
+          sleep 70
+          ohmylaya ask classify < triage.json | jq -e '.results | length == 3 and all(.id and .label and .action)' 
 
       - uses: charmbracelet/vhs-action@v2
         with:
