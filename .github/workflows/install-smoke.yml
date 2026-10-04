@@ -1,0 +1,81 @@
+name: install-smoke
+
+# Installs a published release on clean Linux, macOS and Windows runners with
+# install.sh / install.ps1 from the checked-out ref: download, checksum,
+# `ohmylaya install` on the CPU backend, a doctor smoke test, one real tool
+# call and an uninstall. The binaries, engine and model are the published
+# ones. release.yml calls it once GoReleaser has uploaded every asset; it can
+# also be run by hand against any tag.
+
+on:
+  workflow_call:
+    inputs:
+      version:
+        description: Release tag to install
+        required: true
+        type: string
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Release tag to install, e.g. v0.1.2, or latest"
+        required: false
+        default: latest
+
+permissions:
+  contents: read
+
+jobs:
+  one-shot:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, macos-14, windows-2022]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    env:
+      # Both installers read these variables (see their header comments).
+      OHMYLAYA_VERSION: ${{ inputs.version }}
+      OHMYLAYA_INSTALL_ARGS: --backend cpu --agents none --yes
+      PROMPT: '{"labels":[{"key":"bug","description":"something is broken"},{"key":"feature","description":"a request for new behaviour"}],"items":[{"id":"1","text":"The app crashes when I click save"}]}'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          sparse-checkout: |
+            install.sh
+            install.ps1
+          sparse-checkout-cone-mode: false
+
+      - name: One-shot install (Linux, macOS)
+        id: install-unix
+        if: runner.os != 'Windows'
+        run: |
+          sh install.sh
+          test -x "$HOME/.local/bin/ohmylaya"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: One-shot install (Windows)
+        id: install-windows
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          ./install.ps1
+          $bin = Join-Path $env:LOCALAPPDATA 'ohmylaya\bin'
+          if (-not (Test-Path (Join-Path $bin 'ohmylaya.exe'))) { throw "ohmylaya.exe not in $bin" }
+          Add-Content $env:GITHUB_PATH $bin
+
+      - name: Doctor with smoke test
+        run: ohmylaya doctor --smoke
+
+      - name: One real tool call
+        shell: bash
+        run: |
+          out=$(printf '%s' "$PROMPT" | ohmylaya ask classify)
+          echo "$out"
+          # Any offered label is fine: this proves the engine answers, not
+          # that it answers well (see docs/benchmarks.md for accuracy).
+          echo "$out" | jq -e '.results | length == 1 and (.[0].label | IN("bug", "feature"))'
+
+      - name: Uninstall
+        if: always() && (steps.install-unix.outcome == 'success' || steps.install-windows.outcome == 'success')
+        run: ohmylaya uninstall --yes
