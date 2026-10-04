@@ -40,7 +40,7 @@ place it in a user-writable bin directory, and then run `ohmylaya install`.
 `ohmylaya install` MUST run a guided flow on a terminal and MUST accept flags
 that make every choice explicit so CI and scripts can run it without prompts.
 
-Flags: `--backend auto|vulkan|cuda|cpu`, `--model multilingual|english|typed-decisions`,
+Flags: `--backend auto|vulkan|cuda|cpu`, `--model english|multilingual|typed-decisions` (default `english`),
 `--agents claude,codex,opencode,pi|all|none`, `--yes`, `--home <dir>`, `--no-skill`, `--no-start`.
 
 #### Scenario: Non-interactive install
@@ -65,30 +65,52 @@ following order, and MUST let the user override it.
 
 | Platform | Detection | Recommended |
 |---|---|---|
-| Windows x64 | NVIDIA driver present (`nvcuda.dll` loadable) | `cuda` when the user opts in, otherwise `vulkan` |
-| Windows x64 | `vulkan-1.dll` loadable | `vulkan` |
-| Windows x64 | Neither | `cpu` |
-| Linux x64 | `libcuda.so.1` present and glibc >= 2.39 | `cuda` when the user opts in, otherwise `vulkan` |
-| Linux x64 | `libvulkan.so.1` present | `vulkan` |
-| Linux x64 | Neither | `cpu` |
-| macOS arm64 | Always | `cpu` in v1 |
+| Windows x64 | `nvcuda.dll` and `vulkan-1.dll` loadable | `cuda` when the user opts in, otherwise `vulkan` |
+| Windows x64 | only `vulkan-1.dll` loadable | `vulkan` |
+| Windows x64 | only `nvcuda.dll` loadable | `cuda` |
+| Windows x64 | neither | refused before download: install a GPU driver or the Vulkan Runtime |
+| Linux x64 (glibc >= 2.39) | `libcuda.so.1` and `libvulkan.so.1` present | `cuda` when the user opts in, otherwise `vulkan` |
+| Linux x64 (glibc >= 2.39) | only `libvulkan.so.1` present | `vulkan` |
+| Linux x64 (glibc >= 2.39) | only `libcuda.so.1` present | `cuda` |
+| Linux x64 (glibc >= 2.39) | neither | refused before download: install `libvulkan1` or `vulkan-loader` |
+| Linux x64 (glibc < 2.39) | any | refused before download: upstream builds need glibc 2.39 |
+| macOS arm64, macOS 15+ | Always | `cpu` in v1 |
+| macOS arm64, older | Always | refused before download: the engine targets macOS 15 |
+
+`cpu` is offered on Windows and Linux only where the Vulkan loader is present,
+because the upstream CPU mode lives in the Vulkan build, which links the
+loader dynamically (verified on clean runners, 2026-10-04). A refusal is
+unconditional: `--backend` cannot override it, because no backend can start
+on that host. The user override applies to the backends the table offers.
+When only `cuda` is offered and its smoke test fails, install stops with the
+engine log; installing the Vulkan loader makes `vulkan` and `cpu` available.
 
 The recommendation MUST show the download size of each option. CUDA on Windows
 MUST also download the two cuBLAS DLLs listed in the manifest.
 
 #### Scenario: NVIDIA machine on Windows
 
-- GIVEN Windows with an NVIDIA driver
+- GIVEN Windows with an NVIDIA driver and the Vulkan loader
 - WHEN detection runs
-- THEN both `cuda` (about 200 MB plus cuBLAS DLLs) and `vulkan` (about 80 MB) are offered
+- THEN both `cuda` (191 MB plus the 404 MB cuBLAS archive) and `vulkan` (about 80 MB) are offered
 - AND `vulkan` is preselected with a note that `cuda` is faster.
 
-#### Scenario: No GPU
+#### Scenario: No GPU, Vulkan loader present
 
-- GIVEN a machine without a usable GPU runtime
+- GIVEN a Windows or Linux machine with the Vulkan loader but no usable GPU
 - WHEN detection runs
-- THEN `cpu` is preselected
-- AND the user is told expected latency is in the hundreds of milliseconds per question.
+- THEN `vulkan` is preselected, because a loader cannot tell whether a GPU
+  device exists, and `cpu` is offered with its expected latency of hundreds
+  of milliseconds per question
+- AND when the `vulkan` smoke test fails, `ohmylaya install --backend cpu`
+  runs the Vulkan build with `--cpu`.
+
+#### Scenario: Neither Vulkan loader nor NVIDIA driver
+
+- GIVEN a Windows or Linux machine with neither the Vulkan loader nor the NVIDIA driver
+- WHEN detection runs
+- THEN install stops before any download
+- AND names the loader library and how to install it.
 
 ### Requirement: Verified, resumable, atomic downloads
 

@@ -75,9 +75,15 @@ branch revisions are pinned to their commit.
   Windows or Linux host with no Vulkan loader at all, and macOS `--cpu`. See
   `docs/research/engine-verification.md`.
 
-### D4. Default model: `multilingual`
+### D4. Default model: `english` (revised in v0.1.2)
 
-647 MB, 1024-token context, 100+ languages, and upstream measures it about 2x
+Revision, 2026-10-04: the default is `english`. The offline benchmark
+(`docs/benchmarks.md`) put `multilingual` near or below chance on `rerank`
+(0-10%) and `screen` (0-9%), while `english` reached 80-90% on `rerank` and
+won every tool. Speed does not make up for wrong answers. Existing installs
+keep their configured model. The original reasoning follows.
+
+Original decision, `multilingual`: 647 MB, 1024-token context, 100+ languages, and upstream measures it about 2x
 faster than the English checkpoint. English-only users can pick `english`;
 `typed-decisions` is offered for the four workflows it was fine-tuned on.
 Checkpoint files per variant on Hugging Face `convaiinnovations/laya`:

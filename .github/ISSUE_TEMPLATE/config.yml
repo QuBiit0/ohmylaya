@@ -1,1 +1,8 @@
 blank_issues_enabled: false
+contact_links:
+  - name: Security vulnerability
+    url: https://github.com/QuBiit0/ohmylaya/security/advisories/new
+    about: Report it privately, not in a public issue.
+  - name: Troubleshooting guide
+    url: https://github.com/QuBiit0/ohmylaya/blob/main/docs/troubleshooting.md
+    about: Most install and tool problems have a known fix.

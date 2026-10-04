@@ -14,7 +14,8 @@ Thanks for helping build ohmylaya.
 
 - English everywhere: code, comments, docs, commits, UI strings.
 - Test first. Every behaviour change ships with a failing test that the change
-  turns green. `go test -race ./...` must pass locally.
+  turns green. `go test -race ./...` must pass; CI runs it on Linux, macOS
+  and Windows.
 - Pull requests stay under 400 changed lines, excluding `testdata/`, `docs/`
   and `openspec/`. CI enforces it. Chain PRs when a task needs more.
 - Conventional commit prefixes: `feat`, `fix`, `docs`, `test`, `refactor`,
@@ -31,11 +32,29 @@ helped you write it.
 
 ## Local setup
 
+Requires Go (version in `go.mod`). `-race` needs a C toolchain; without one,
+run `go test ./...` and let CI run the race detector.
+
 ```sh
-go test -race ./...
-make build
+make test                  # go test -race ./...
+make lint                  # go vet and staticcheck
+make build                 # bin/ohmylaya
 ./bin/ohmylaya version
 ```
 
-Integration tests that need the real engine are behind the `engine` build tag
-and `OHMYLAYA_TEST_ENGINE=1`.
+| Also useful | Command |
+|---|---|
+| Tests against the real engine | `OHMYLAYA_TEST_ENGINE=1 go test -tags engine ./internal/jev/` |
+| Benchmark the tools offline | `go run ./bench -bin bin/ohmylaya` (see `docs/benchmarks.md`) |
+| Refresh the engine and model manifest | `make manifest TAG=<laya.cpp tag> REVISION=main` |
+| Install a release on clean CI runners | `gh workflow run install-smoke.yml -f version=v0.x.y` |
+
+Try changes without touching your real install by pointing `OHMYLAYA_HOME`
+and `OHMYLAYA_PORT` at a scratch directory and a free port.
+
+## Releasing
+
+1. Add the release to `CHANGELOG.md`.
+2. Tag it: `git tag -a v0.x.y -m "ohmylaya v0.x.y"`, then push the tag.
+3. The release workflow runs the tests, publishes with GoReleaser, then runs
+   `install-smoke` on Linux, macOS and Windows. Check that it is green.
