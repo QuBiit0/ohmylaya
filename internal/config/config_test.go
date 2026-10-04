@@ -50,7 +50,7 @@ func TestLayoutPaths(t *testing.T) {
 func TestDefaultConfigMatchesSpec(t *testing.T) {
 	t.Parallel()
 	c := Default()
-	if c.Version != 1 || c.Backend != "vulkan" || c.Model != "multilingual" || c.Port != 45292 {
+	if c.Version != 1 || c.Backend != "vulkan" || c.Model != "english" || c.Port != 45292 {
 		t.Errorf("unexpected defaults: %+v", c)
 	}
 	if c.IdleTimeout.Duration != 30*time.Minute {

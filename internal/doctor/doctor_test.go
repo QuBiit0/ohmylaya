@@ -56,7 +56,7 @@ func testDeps(t *testing.T) Deps {
 	m.Engine.Assets = []manifest.Asset{{OS: runtime.GOOS, Arch: runtime.GOARCH, Backend: "cpu", Name: "engine", URL: "http://x", Size: int64(len(data)), SHA256: hex.EncodeToString(sum[:]), SupportsCPU: true}}
 	m.Models.Repo, m.Models.Revision = "laya", "rev"
 	w := sha256.Sum256([]byte("weights"))
-	m.Models.Variants = map[string]*manifest.Variant{"multilingual": {Prefix: "multilingual/", Context: 1024, HeadMaxLen: 256, Files: []manifest.File{{Path: "model.safetensors", Size: 7, SHA256: hex.EncodeToString(w[:])}}}}
+	m.Models.Variants = map[string]*manifest.Variant{config.DefaultModel: {Prefix: "", Context: 512, HeadMaxLen: 192, Files: []manifest.File{{Path: "model.safetensors", Size: 7, SHA256: hex.EncodeToString(w[:])}}}}
 	userHome := filepath.Join(home, "user")
 	os.MkdirAll(userHome, 0o755)
 	engine := filepath.Join(l.Bin, "laya-cli")
@@ -117,8 +117,8 @@ func TestHealthyInstallPassesAndSmokeRuns(t *testing.T) {
 	os.MkdirAll(d.Layout.Bin, 0o755)
 	data, _ := os.ReadFile(fakeEngine)
 	os.WriteFile(d.EnginePath, data, 0o755)
-	os.MkdirAll(d.Layout.VariantDir("multilingual"), 0o755)
-	os.WriteFile(filepath.Join(d.Layout.VariantDir("multilingual"), "model.safetensors"), []byte("weights"), 0o644)
+	os.MkdirAll(d.Layout.VariantDir(config.DefaultModel), 0o755)
+	os.WriteFile(filepath.Join(d.Layout.VariantDir(config.DefaultModel), "model.safetensors"), []byte("weights"), 0o644)
 	a, _ := agents.ByID("claude")
 	os.WriteFile(d.BinPath, []byte("x"), 0o755)
 	a.Register(d.Env, d.BinPath)

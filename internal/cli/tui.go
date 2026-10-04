@@ -144,7 +144,7 @@ func hostServices(deps install.Deps) tui.Services {
 			for _, o := range det.Options {
 				backends = append(backends, o.Backend)
 			}
-			return backends, []string{"multilingual", "english", "typed-decisions"}
+			return backends, config.ModelNames
 		},
 	}
 }

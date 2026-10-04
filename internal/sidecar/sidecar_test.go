@@ -117,7 +117,7 @@ func TestEnsureSpawnsThenAttaches(t *testing.T) {
 		t.Fatalf("handle = %+v", h1)
 	}
 	st, err := ReadState(s.layout)
-	if err != nil || st.PID != h1.PID || st.Backend != "cpu" || st.Model != "multilingual" {
+	if err != nil || st.PID != h1.PID || st.Backend != "cpu" || st.Model != config.DefaultModel {
 		t.Fatalf("state = %+v, %v", st, err)
 	}
 
@@ -161,7 +161,7 @@ func TestEnsureRespawnsWhenConfigChanged(t *testing.T) {
 		t.Fatal(err)
 	}
 	h.Close()
-	s.cfg.Model = "english"
+	s.cfg.Model = "multilingual"
 	h2, err := s.Ensure(context.Background())
 	if err != nil {
 		t.Fatal(err)

@@ -68,6 +68,8 @@ func fixture(t *testing.T) (*httptest.Server, *manifest.Manifest) {
 		"/engine": fakeEngineBytes,
 		"/laya/resolve/rev/multilingual/model.safetensors":    []byte("weights"),
 		"/laya/resolve/rev/multilingual/rl_agent_config.json": []byte(`{"a":1}`),
+		"/laya/resolve/rev/model.safetensors":                 []byte("weights"),
+		"/laya/resolve/rev/rl_agent_config.json":              []byte(`{"a":1}`),
 	}
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		b, ok := files[r.URL.Path]
@@ -82,10 +84,16 @@ func fixture(t *testing.T) (*httptest.Server, *manifest.Manifest) {
 	m.Engine.Project, m.Engine.Tag = "test/engine", "r0"
 	m.Engine.Assets = []manifest.Asset{{OS: runtime.GOOS, Arch: runtime.GOARCH, Backend: "cpu", Name: "engine", URL: srv.URL + "/engine", Size: int64(len(fakeEngineBytes)), SHA256: digest(fakeEngineBytes), SupportsCPU: true}}
 	m.Models.Repo, m.Models.Revision = "laya", "rev"
-	m.Models.Variants = map[string]*manifest.Variant{"multilingual": {Prefix: "multilingual/", Context: 1024, HeadMaxLen: 256, Files: []manifest.File{
-		{Path: "model.safetensors", Size: 7, SHA256: digest([]byte("weights"))},
-		{Path: "rl_agent_config.json", Size: 7, SHA256: digest([]byte(`{"a":1}`))},
-	}}}
+	files2 := func() []manifest.File {
+		return []manifest.File{
+			{Path: "model.safetensors", Size: 7, SHA256: digest([]byte("weights"))},
+			{Path: "rl_agent_config.json", Size: 7, SHA256: digest([]byte(`{"a":1}`))},
+		}
+	}
+	m.Models.Variants = map[string]*manifest.Variant{
+		"multilingual": {Prefix: "multilingual/", Context: 1024, HeadMaxLen: 256, Files: files2()},
+		"english":      {Prefix: "", Context: 512, HeadMaxLen: 192, Files: files2()},
+	}
 	// FileURL builds huggingface URLs; override through a client transport.
 	return srv, m
 }
@@ -137,7 +145,7 @@ func TestInstallEndToEndThenIdempotentThenUninstall(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Run() = %v\n%s", err, d.Out.(*bytes.Buffer).String())
 	}
-	if rep.Backend != "cpu" || rep.Model != "multilingual" || !rep.SmokeRan || !rep.Changed {
+	if rep.Backend != "cpu" || rep.Model != "english" || !rep.SmokeRan || !rep.Changed {
 		t.Errorf("report = %+v", rep)
 	}
 	if len(rep.Downloaded) != 3 {
@@ -146,7 +154,7 @@ func TestInstallEndToEndThenIdempotentThenUninstall(t *testing.T) {
 	if err := acquire.VerifyFile(EnginePath(d.Layout), int64(len(fakeEngineBytes)), digest(fakeEngineBytes)); err != nil {
 		t.Errorf("engine not placed: %v", err)
 	}
-	if _, err := os.Stat(filepath.Join(d.Layout.VariantDir("multilingual"), "model.safetensors")); err != nil {
+	if _, err := os.Stat(filepath.Join(d.Layout.VariantDir("english"), "model.safetensors")); err != nil {
 		t.Error("model not placed")
 	}
 	cfg, _ := config.Load(d.Layout)
@@ -277,10 +285,15 @@ type fakePrompt struct {
 	multi   []string
 	confirm bool
 	titles  []string
+	choices map[string][]Choice
 }
 
 func (f *fakePrompt) Select(title string, c []Choice) (string, error) {
 	f.titles = append(f.titles, title)
+	if f.choices == nil {
+		f.choices = map[string][]Choice{}
+	}
+	f.choices[title] = c
 	v := f.selects[0]
 	f.selects = f.selects[1:]
 	return v, nil
@@ -302,6 +315,9 @@ func TestInteractiveFlowAsksAndCanCancel(t *testing.T) {
 	}
 	if strings.Join(fp.titles, ",") != "Engine backend,Model,Register in agents" {
 		t.Errorf("titles = %v", fp.titles)
+	}
+	if c := fp.choices["Model"]; len(c) == 0 || c[0].Value != "english" || !c[0].Selected {
+		t.Errorf("model choices = %+v, want english first and preselected", c)
 	}
 	if _, err := os.Stat(d.Layout.Bin); !errors.Is(err, os.ErrNotExist) {
 		t.Error("cancelled install must not create the home")

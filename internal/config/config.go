@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"time"
 
 	toml "github.com/pelletier/go-toml/v2"
@@ -120,12 +121,19 @@ type Config struct {
 	} `toml:"agents"`
 }
 
+// DefaultModel is the checkpoint a fresh install uses. english won every tool
+// in docs/benchmarks.md; multilingual stays available for non-English text.
+const DefaultModel = "english"
+
+// ModelNames lists the checkpoints in the order the installer offers them.
+var ModelNames = []string{"english", "multilingual", "typed-decisions"}
+
 // Default returns the configuration the installer writes on a fresh machine.
 func Default() *Config {
 	c := &Config{
 		Version:     1,
 		Backend:     "vulkan",
-		Model:       "multilingual",
+		Model:       DefaultModel,
 		Port:        DefaultPort,
 		IdleTimeout: Duration{30 * time.Minute},
 		Provider:    "local",
@@ -154,7 +162,7 @@ func (c *Config) Validate() error {
 	case !backends[c.Backend]:
 		return fmt.Errorf("%w: backend %q (vulkan, cuda, cpu)", ErrInvalid, c.Backend)
 	case !models[c.Model]:
-		return fmt.Errorf("%w: model %q (multilingual, english, typed-decisions)", ErrInvalid, c.Model)
+		return fmt.Errorf("%w: model %q (%s)", ErrInvalid, c.Model, strings.Join(ModelNames, ", "))
 	case !providers[c.Provider]:
 		return fmt.Errorf("%w: provider %q (local, typesafe)", ErrInvalid, c.Provider)
 	case !logLevels[c.LogLevel]:

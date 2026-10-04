@@ -56,8 +56,14 @@ irm https://raw.githubusercontent.com/QuBiit0/ohmylaya/main/install.ps1 | iex
 
 The script verifies the binary against the release checksums, then runs
 `ohmylaya install`, which picks a backend for your machine, downloads the
-engine and the multilingual checkpoint, runs a smoke test and registers the
+engine and the `english` checkpoint, runs a smoke test and registers the
 detected agents. Restart your agent afterwards.
+
+`english` is the default because it won every tool in
+[docs/benchmarks.md](docs/benchmarks.md); `multilingual` fell to near or below
+chance on `rerank` and `screen`. Its context is shorter, so long inputs are
+truncated sooner. Pick `--model multilingual` only for non-English content and
+expect weaker answers.
 
 Downloads: engine 40 to 80 MB (Vulkan or CPU), 200 MB plus two cuBLAS DLLs
 (CUDA on Windows), 786 MB (CUDA on Linux); checkpoint 650 to 850 MB.

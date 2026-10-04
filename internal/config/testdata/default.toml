@@ -1,6 +1,6 @@
 version = 1
 backend = 'vulkan'
-model = 'multilingual'
+model = 'english'
 port = 45292
 idle_timeout = '30m'
 provider = 'local'

@@ -42,7 +42,7 @@ With no command on an interactive terminal, ohmylaya opens its TUI.
 
 Commands:
   install     Download the engine and model, verify, register agents
-              [--backend auto|vulkan|cuda|cpu] [--model multilingual|english|typed-decisions]
+              [--backend auto|vulkan|cuda|cpu] [--model english|multilingual|typed-decisions]
               [--agents claude,codex,opencode,pi|all|none] [--yes] [--no-skill] [--no-start]
   uninstall   Remove the engine, model, skills and agent entries [--keep-models]
   mcp         Serve the tools over MCP on stdin/stdout (used by agents)
@@ -310,7 +310,7 @@ func runInstall(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 	var opts install.Options
 	var agentList string
 	fs.StringVar(&opts.Backend, "backend", "", "auto, vulkan, cuda or cpu")
-	fs.StringVar(&opts.Model, "model", "", "multilingual, english or typed-decisions")
+	fs.StringVar(&opts.Model, "model", "", "english (default), multilingual or typed-decisions")
 	fs.StringVar(&agentList, "agents", "", "comma-separated agent ids, all, or none")
 	fs.BoolVar(&opts.Yes, "yes", false, "do not prompt")
 	fs.BoolVar(&opts.NoSkill, "no-skill", false, "do not install the skill")

@@ -18,7 +18,7 @@ skills/         canonical copy of the installed skill
 ```toml
 version = 1
 backend = "vulkan"          # vulkan | cuda | cpu
-model = "multilingual"      # multilingual | english | typed-decisions
+model = "english"           # english | multilingual | typed-decisions
 port = 45292                # loopback only; 45293..45299 are tried when busy
 idle_timeout = "30m"        # "0s" keeps the engine alive
 provider = "local"          # local | typesafe

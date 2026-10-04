@@ -139,18 +139,18 @@ func Resolve(deps Deps, opts Options) (*Plan, error) {
 
 	model := opts.Model
 	if model == "" {
-		model = "multilingual"
+		model = config.DefaultModel
 		if cfg, err := config.Load(deps.Layout); err == nil && exists(deps.Layout.ConfigPath) {
 			model = cfg.Model
 		}
 		if deps.Prompt != nil && !opts.Yes {
 			var choices []Choice
-			for _, name := range []string{"multilingual", "english", "typed-decisions"} {
+			for _, name := range config.ModelNames {
 				v, err := deps.Manifest.Variant(name)
 				if err != nil {
 					continue
 				}
-				choices = append(choices, Choice{Value: name, Label: fmt.Sprintf("%s (%s)", name, humanBytes(v.TotalSize())), Description: modelBlurb(name), Selected: name == "multilingual"})
+				choices = append(choices, Choice{Value: name, Label: fmt.Sprintf("%s (%s)", name, humanBytes(v.TotalSize())), Description: modelBlurb(name), Selected: name == config.DefaultModel})
 			}
 			v, err := deps.Prompt.Select("Model", choices)
 			if err != nil {
@@ -437,12 +437,12 @@ func backendNames(det platform.Detection) []string {
 
 func modelBlurb(name string) string {
 	switch name {
-	case "english":
-		return "English text, 512-token context, larger model"
+	case "multilingual":
+		return "100+ languages, 1024-token context, fastest; much weaker on the benchmark"
 	case "typed-decisions":
 		return "fine-tuned for agent-trace, support, invoice and security workflows"
 	}
-	return "100+ languages, 1024-token context, fastest; recommended"
+	return "English text, 512-token context; best benchmark accuracy, recommended"
 }
 
 func humanBytes(n int64) string {
