@@ -69,8 +69,15 @@ func TestWindowsCUDAAssetCarriesCublasExtra(t *testing.T) {
 	if a.Extra == nil {
 		t.Fatal("Extra is nil, want cuBLAS archive")
 	}
-	if len(a.Extra.Members) < 2 {
-		t.Errorf("Extra.Members = %v, want the two cuBLAS DLLs", a.Extra.Members)
+	// NVIDIA's redist archive keeps the DLLs under bin/x64/ (checked against
+	// libcublas-windows-x86_64-13.1.0.3-archive.zip); members are matched as
+	// path suffixes, so bin/cublas64_13.dll would never match.
+	want := map[string]bool{"bin/x64/cublas64_13.dll": true, "bin/x64/cublasLt64_13.dll": true}
+	for _, mem := range a.Extra.Members {
+		delete(want, mem)
+	}
+	if len(want) != 0 {
+		t.Errorf("Extra.Members = %v, missing %v", a.Extra.Members, want)
 	}
 	if v, _ := m.EngineAsset("windows", "amd64", "vulkan"); v.Extra != nil {
 		t.Error("vulkan asset must not carry an extra archive")

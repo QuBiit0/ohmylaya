@@ -208,11 +208,12 @@ func TestExtractMembers(t *testing.T) {
 	t.Parallel()
 	var buf bytes.Buffer
 	zw := zip.NewWriter(&buf)
+	// The layout of NVIDIA's libcublas redist archive.
 	for name, content := range map[string]string{
-		"libcublas/bin/cublas64_13.dll":   "dll-a",
-		"libcublas/bin/cublasLt64_13.dll": "dll-b",
-		"libcublas/LICENSE":               "lic",
-		"libcublas/bin/other.dll":         "ignored",
+		"libcublas/bin/x64/cublas64_13.dll":   "dll-a",
+		"libcublas/bin/x64/cublasLt64_13.dll": "dll-b",
+		"libcublas/LICENSE":                   "lic",
+		"libcublas/bin/x64/nvblas64_13.dll":   "ignored",
 	} {
 		w, _ := zw.Create(name)
 		w.Write([]byte(content))
@@ -222,7 +223,7 @@ func TestExtractMembers(t *testing.T) {
 	os.WriteFile(zipPath, buf.Bytes(), 0o644)
 
 	dest := t.TempDir()
-	err := ExtractMembers(zipPath, []string{"bin/cublas64_13.dll", "bin/cublasLt64_13.dll", "LICENSE"}, dest)
+	err := ExtractMembers(zipPath, []string{"bin/x64/cublas64_13.dll", "bin/x64/cublasLt64_13.dll", "LICENSE"}, dest)
 	if err != nil {
 		t.Fatalf("ExtractMembers() = %v", err)
 	}
@@ -232,7 +233,7 @@ func TestExtractMembers(t *testing.T) {
 			t.Errorf("%s = %q, %v; want %q", name, got, err, want)
 		}
 	}
-	if _, err := os.Stat(filepath.Join(dest, "other.dll")); !errors.Is(err, os.ErrNotExist) {
+	if _, err := os.Stat(filepath.Join(dest, "nvblas64_13.dll")); !errors.Is(err, os.ErrNotExist) {
 		t.Error("unlisted member must not be extracted")
 	}
 	if err := ExtractMembers(zipPath, []string{"bin/missing.dll"}, dest); err == nil {

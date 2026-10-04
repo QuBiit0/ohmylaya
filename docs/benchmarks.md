@@ -38,6 +38,22 @@ table gives the range.
 - The first call after an engine start pays a shader warmup. That shows as
   the 640 ms upper bound for `check`.
 
+### CUDA on Windows
+
+One run of the same corpus on the CUDA backend (RTX 3050 laptop GPU,
+`english`, ohmylaya at the commit that fixed the cuBLAS archive layout, on
+2026-10-04). Accuracy matched the Vulkan runs; latency was lower.
+
+| Tool | Accuracy | Median ms (CUDA) | Median ms (Vulkan) |
+|---|---:|---:|---:|
+| `check` | 64% | 179 | 270–640 |
+| `classify` | 75% | 233 | 260 |
+| `rerank` (top 3 of 20) | 90% | 2,243 | 3,000 |
+| `screen` | 45% | 138 | 225 |
+
+CUDA downloads about 600 MB more than Vulkan (a 191 MB engine plus the
+404 MB cuBLAS archive), so Vulkan stays the default on NVIDIA.
+
 ### What went wrong on `multilingual`
 
 - **`screen` marks almost everything as prompt injection.** The injection

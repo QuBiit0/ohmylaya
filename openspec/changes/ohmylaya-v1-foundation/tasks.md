@@ -22,7 +22,9 @@ earlier packages. Strict TDD applies to every Go task.
 - [x] Verify macOS executable honours `--cpu`. The r0002 build targets
       macOS 15 (LC_BUILD_VERSION minos 15.0) and aborts in dyld on macOS 14;
       detection now requires macOS 15. (2026-10-04)
-- [ ] Measure CUDA on Windows (needs the two cuBLAS DLLs).
+- [x] Measure CUDA on Windows (needs the two cuBLAS DLLs). Install was
+      broken: NVIDIA's archive keeps the DLLs under `bin/x64/`, not `bin/`.
+      Fixed; latency and accuracy in `docs/benchmarks.md`. (2026-10-04)
 
 Review forecast: docs only, about 150 lines.
 
@@ -230,8 +232,10 @@ Setup and Agents; Update, Doctor and Logs).
       agent table lives in the README. (2026-09-23)
 - [x] Release workflow on `v*` tags running tests then GoReleaser.
       (2026-09-23)
-- [ ] Tag v0.1.0, publish release, verify the one-shot on all three OSes.
-      Windows verified from source; Linux and macOS need a machine.
+- [x] Tag v0.1.0, publish release, verify the one-shot on all three OSes.
+      `install-smoke` runs the published installers on clean Linux, macOS 15
+      and Windows runners after every release; v0.1.1 passed on all three.
+      (2026-10-04)
 
 Review forecast: docs only.
 

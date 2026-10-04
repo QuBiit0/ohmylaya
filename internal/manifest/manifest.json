@@ -28,8 +28,8 @@
           "url": "https://developer.download.nvidia.com/compute/cuda/redist/libcublas/windows-x86_64/libcublas-windows-x86_64-13.1.0.3-archive.zip",
           "sha256": "4ac4847bbe4f7709b244956fcfc32197a2954ee70b155cb67eebd9ee26f7e339",
           "members": [
-            "bin/cublas64_13.dll",
-            "bin/cublasLt64_13.dll",
+            "bin/x64/cublas64_13.dll",
+            "bin/x64/cublasLt64_13.dll",
             "LICENSE"
           ]
         }
