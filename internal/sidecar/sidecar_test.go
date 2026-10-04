@@ -418,8 +418,8 @@ func TestEnsureReportsPortContentionWhenEveryAttemptLosesItsPort(t *testing.T) {
 	}
 	_, err := s.Ensure(context.Background())
 	var se *StartError
-	if !errors.As(err, &se) || !strings.Contains(se.Reason, "taken by another process") {
-		t.Fatalf("err = %v, want a StartError naming port contention", err)
+	if !errors.As(err, &se) || !strings.Contains(se.Reason, "taken by another process") || !strings.Contains(se.Reason, "exited before becoming ready") {
+		t.Fatalf("err = %v, want a StartError naming port contention and the last exit", err)
 	}
 	if attempts != spawnAttempts {
 		t.Errorf("attempts = %d, want %d", attempts, spawnAttempts)

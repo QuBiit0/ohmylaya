@@ -193,7 +193,7 @@ func TestWeakToolDescriptionsStateMeasuredAccuracy(t *testing.T) {
 	t.Parallel()
 	for tool, want := range map[string]string{"screen": "45%", "check": "57-71%"} {
 		d := descriptions[tool]
-		if !strings.Contains(d, want) || !strings.Contains(d, "hint") {
+		if !strings.Contains(d, want) || !strings.Contains(d, "hint") || !strings.Contains(d, "multilingual") {
 			t.Errorf("%s description = %q, want it to call itself a hint and cite %s", tool, d, want)
 		}
 	}

@@ -186,16 +186,20 @@ func (s *Supervisor) spawnOnFreePort(ctx context.Context) (State, error) {
 			return State{}, err
 		}
 	}
+	// Only a lost port race reaches this point, so err is a *StartError.
 	var se *StartError
-	errors.As(err, &se)
+	if !errors.As(err, &se) {
+		return State{}, err
+	}
 	return State{}, &StartError{
-		Reason:  fmt.Sprintf("the chosen port was taken by another process on each of %d attempts; free ports %d..%d or set port in config.toml", spawnAttempts, s.cfg.Port, s.cfg.Port+portRange),
+		Reason:  fmt.Sprintf("the chosen port was taken by another process on each of %d attempts (free ports %d..%d or set port in config.toml); last attempt: %s", spawnAttempts, s.cfg.Port, s.cfg.Port+portRange, se.Reason),
 		LogTail: se.LogTail,
 	}
 }
 
-// lostPortRace reports whether the engine exited early because another
-// process bound its port: the port was free when chosen and is busy now.
+// lostPortRace reports whether the engine exited early and its port is now
+// busy. The caller chose the port as free, so busy means another process
+// bound it first.
 func lostPortRace(err error, port int) bool {
 	var se *StartError
 	return errors.As(err, &se) && se.earlyExit && !portFree(port)
