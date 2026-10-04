@@ -377,3 +377,64 @@ func indexOf(s, sub string) int {
 	}
 	return -1
 }
+
+// Another process can take the chosen port between choosePort closing its
+// probe listener and the engine binding it. Ensure must try another port.
+func TestEnsureRetriesWhenItsPortIsTakenBeforeTheEngineBinds(t *testing.T) {
+	s := newSupervisor(t)
+	var stolen, attempts int
+	s.portChosen = func(port int) {
+		attempts++
+		if stolen != 0 {
+			return
+		}
+		l, err := net.Listen("tcp", "127.0.0.1:"+strconv.Itoa(port))
+		if err != nil {
+			t.Fatal(err)
+		}
+		t.Cleanup(func() { l.Close() })
+		stolen = port
+	}
+	h, err := s.Ensure(context.Background())
+	if err != nil {
+		t.Fatalf("Ensure() = %v, want a retry on another port", err)
+	}
+	defer h.Close()
+	if h.Port == stolen || attempts != 2 {
+		t.Errorf("port = %d after %d attempts, want a second attempt off the stolen port %d", h.Port, attempts, stolen)
+	}
+}
+
+func TestEnsureReportsPortContentionWhenEveryAttemptLosesItsPort(t *testing.T) {
+	s := newSupervisor(t)
+	attempts := 0
+	s.portChosen = func(port int) {
+		attempts++
+		l, err := net.Listen("tcp", "127.0.0.1:"+strconv.Itoa(port))
+		if err != nil {
+			t.Fatal(err)
+		}
+		t.Cleanup(func() { l.Close() })
+	}
+	_, err := s.Ensure(context.Background())
+	var se *StartError
+	if !errors.As(err, &se) || !strings.Contains(se.Reason, "taken by another process") {
+		t.Fatalf("err = %v, want a StartError naming port contention", err)
+	}
+	if attempts != spawnAttempts {
+		t.Errorf("attempts = %d, want %d", attempts, spawnAttempts)
+	}
+}
+
+func TestEnsureDoesNotRetryACrashOnAFreePort(t *testing.T) {
+	s := newSupervisor(t)
+	s.extraEnv = []string{"FAKEENGINE_CRASH=1"}
+	attempts := 0
+	s.portChosen = func(int) { attempts++ }
+	if _, err := s.Ensure(context.Background()); err == nil {
+		t.Fatal("expected error when the engine exits")
+	}
+	if attempts != 1 {
+		t.Errorf("attempts = %d, want 1: a crash unrelated to the port must not be retried", attempts)
+	}
+}

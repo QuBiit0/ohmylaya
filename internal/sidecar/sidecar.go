@@ -26,8 +26,11 @@ const (
 	activityFile = "last-activity"
 	clientsDir   = "clients"
 	portRange    = 7
-	maxLogBytes  = 5 << 20
-	logTailLines = 50
+	// spawnAttempts bounds retries when another process takes the chosen
+	// port before the engine binds it.
+	spawnAttempts = 3
+	maxLogBytes   = 5 << 20
+	logTailLines  = 50
 )
 
 // State describes the running engine, persisted in state/sidecar.json.
@@ -48,6 +51,8 @@ func (s State) BaseURL() string { return "http://127.0.0.1:" + strconv.Itoa(s.Po
 type StartError struct {
 	Reason  string
 	LogTail string
+	// earlyExit is set when the engine exited before becoming ready.
+	earlyExit bool
 }
 
 func (e *StartError) Error() string {
@@ -64,6 +69,9 @@ type Supervisor struct {
 	readyTimeout time.Duration
 	extraEnv     []string
 	reaper       []string
+	// portChosen, when set, runs after choosePort and before the engine
+	// starts. Tests use it to take the port in that window.
+	portChosen func(port int)
 }
 
 // SetReaper sets the command spawned detached after every engine start.
@@ -150,11 +158,56 @@ func (s *Supervisor) Ensure(ctx context.Context) (*Handle, error) {
 		_ = s.stopState(ctx, st)
 	}
 
-	st, err := s.spawn(ctx)
+	st, err := s.spawnOnFreePort(ctx)
 	if err != nil {
 		return nil, err
 	}
 	return s.attach(st, true), nil
+}
+
+// spawnOnFreePort starts the engine, retrying on another port when the
+// engine exits early because something else bound its port after
+// choosePort released it. Other failures are returned at once.
+func (s *Supervisor) spawnOnFreePort(ctx context.Context) (State, error) {
+	var err error
+	for attempt := 0; attempt < spawnAttempts; attempt++ {
+		var port int
+		if port, err = s.choosePort(); err != nil {
+			return State{}, err
+		}
+		if s.portChosen != nil {
+			s.portChosen(port)
+		}
+		var st State
+		if st, err = s.spawn(ctx, port); err == nil {
+			return st, nil
+		}
+		if !lostPortRace(err, port) {
+			return State{}, err
+		}
+	}
+	var se *StartError
+	errors.As(err, &se)
+	return State{}, &StartError{
+		Reason:  fmt.Sprintf("the chosen port was taken by another process on each of %d attempts; free ports %d..%d or set port in config.toml", spawnAttempts, s.cfg.Port, s.cfg.Port+portRange),
+		LogTail: se.LogTail,
+	}
+}
+
+// lostPortRace reports whether the engine exited early because another
+// process bound its port: the port was free when chosen and is busy now.
+func lostPortRace(err error, port int) bool {
+	var se *StartError
+	return errors.As(err, &se) && se.earlyExit && !portFree(port)
+}
+
+func portFree(port int) bool {
+	l, err := net.Listen("tcp", "127.0.0.1:"+strconv.Itoa(port))
+	if err != nil {
+		return false
+	}
+	l.Close()
+	return true
 }
 
 func (s *Supervisor) attach(st State, spawned bool) *Handle {
@@ -200,11 +253,7 @@ func (s *Supervisor) lock() (func(), error) {
 	return nil, errors.New("sidecar: lock held by another live process for too long")
 }
 
-func (s *Supervisor) spawn(ctx context.Context) (State, error) {
-	port, err := s.choosePort()
-	if err != nil {
-		return State{}, err
-	}
+func (s *Supervisor) spawn(ctx context.Context, port int) (State, error) {
 	logPath := filepath.Join(s.layout.State, logFile)
 	rotateLog(logPath)
 	logf, err := os.OpenFile(logPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o644)
@@ -235,7 +284,7 @@ func (s *Supervisor) spawn(ctx context.Context) (State, error) {
 	for time.Now().Before(deadline) {
 		select {
 		case err := <-exited:
-			return State{}, &StartError{Reason: "exited before becoming ready: " + errString(err), LogTail: tail(logPath)}
+			return State{}, &StartError{Reason: "exited before becoming ready: " + errString(err), LogTail: tail(logPath), earlyExit: true}
 		case <-ctx.Done():
 			_ = terminate(cmd.Process)
 			return State{}, ctx.Err()
@@ -307,9 +356,7 @@ func (s *Supervisor) RunReaperUntilGone(ctx context.Context, every time.Duration
 // choosePort returns the configured port or the next free one in range.
 func (s *Supervisor) choosePort() (int, error) {
 	for p := s.cfg.Port; p <= s.cfg.Port+portRange; p++ {
-		l, err := net.Listen("tcp", "127.0.0.1:"+strconv.Itoa(p))
-		if err == nil {
-			l.Close()
+		if portFree(p) {
 			return p, nil
 		}
 	}
