@@ -62,6 +62,24 @@ func TestGenerateFollowsTreePagination(t *testing.T) {
 	if _, err := Generate(context.Background(), u.serve(t), loadTemplate(t), "r0002", newRev); err != nil {
 		t.Fatalf("Generate() with one entry per page: %v", err)
 	}
+	// One page per entry under the template's only variant prefix, which
+	// holds two files.
+	if got := u.pages(); got != 2 {
+		t.Errorf("tree pages fetched = %d, want 2", got)
+	}
+}
+
+func TestGenerateStopsEndlessTreePagination(t *testing.T) {
+	t.Parallel()
+	u := newUpstream()
+	u.endless = true
+	_, err := Generate(context.Background(), u.serve(t), loadTemplate(t), "r0002", newRev)
+	if err == nil || !strings.Contains(err.Error(), "pages") {
+		t.Fatalf("err = %v, want a page limit error", err)
+	}
+	if got := u.pages(); got > maxTreePages {
+		t.Errorf("fetched %d pages, want at most %d", got, maxTreePages)
+	}
 }
 
 func TestGenerateRejectsBadRevision(t *testing.T) {

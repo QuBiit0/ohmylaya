@@ -14,6 +14,7 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"flag"
@@ -75,17 +76,20 @@ func run(ctx context.Context, src Sources, args []string) error {
 	if err != nil {
 		return err
 	}
-	if *check {
-		if !reflect.DeepEqual(tmpl, m) {
-			return fmt.Errorf("%s is out of date with upstream; rerun without -check", *path)
-		}
-		return nil
-	}
 	out, err := json.MarshalIndent(m, "", "  ")
 	if err != nil {
 		return err
 	}
-	return cfgfile.WriteAtomic(*path, append(out, '\n'))
+	out = append(out, '\n')
+	if *check {
+		// Compare the exact bytes a write would produce, so a hand edit that
+		// parses to the same struct still fails the check.
+		if !bytes.Equal(b, out) {
+			return fmt.Errorf("%s is out of date with upstream; rerun without -check", *path)
+		}
+		return nil
+	}
+	return cfgfile.WriteAtomic(*path, out)
 }
 
 // Generate returns a copy of tmpl refreshed from upstream at the given tag and

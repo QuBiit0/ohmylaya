@@ -85,11 +85,18 @@ func refreshModels(ctx context.Context, src Sources, m *manifest.Manifest) error
 
 var nextLink = regexp.MustCompile(`<([^>]+)>;\s*rel="next"`)
 
+// maxTreePages bounds pagination. A Laya variant lists a handful of files,
+// so hitting it means the API misbehaves, not that the repository is large.
+const maxTreePages = 100
+
 // listTree follows the Hugging Face tree API's Link pagination.
 func listTree(ctx context.Context, src Sources, url string) (map[string]hfEntry, error) {
 	tree := map[string]hfEntry{}
 	seen := map[string]bool{}
 	for url != "" {
+		if len(seen) == maxTreePages {
+			return nil, fmt.Errorf("tree listing exceeds %d pages at %s", maxTreePages, url)
+		}
 		if seen[url] {
 			return nil, fmt.Errorf("tree pagination loops back to %s", url)
 		}

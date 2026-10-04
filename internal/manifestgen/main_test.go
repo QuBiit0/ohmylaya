@@ -41,6 +41,9 @@ type upstream struct {
 	revSHA   string // commit the main branch resolves to
 	pageSize int    // tree entries per page; 0 disables pagination
 	loopLink bool   // tree pages link back to themselves
+	endless  bool   // tree pages always link to a new next page
+
+	treePages int // tree pages served, guarded by mu
 
 	mu   sync.Mutex
 	auth map[string]string // request path -> Authorization header
@@ -66,6 +69,12 @@ func newUpstream() *upstream {
 		u.sums[name], u.digest[name] = sum(body), sum(body)
 	}
 	return u
+}
+
+func (u *upstream) pages() int {
+	u.mu.Lock()
+	defer u.mu.Unlock()
+	return u.treePages
 }
 
 func (u *upstream) serve(t *testing.T) Sources {
@@ -121,7 +130,13 @@ func (u *upstream) serve(t *testing.T) Sources {
 			tree = append(tree, e)
 		}
 		sort.Slice(tree, func(i, j int) bool { return tree[i].Path < tree[j].Path })
-		if u.loopLink {
+		u.mu.Lock()
+		u.treePages++
+		u.mu.Unlock()
+		if u.endless {
+			n, _ := strconv.Atoi(r.URL.Query().Get("cursor"))
+			w.Header().Set("Link", `<`+srv.URL+r.URL.Path+`?recursive=true&cursor=`+strconv.Itoa(n+1)+`>; rel="next"`)
+		} else if u.loopLink {
 			w.Header().Set("Link", `<`+srv.URL+r.URL.RequestURI()+`>; rel="next"`)
 		} else if u.pageSize > 0 {
 			from, _ := strconv.Atoi(r.URL.Query().Get("cursor"))
@@ -184,6 +199,16 @@ func TestRunWritesThenChecks(t *testing.T) {
 	}
 	if err := run(context.Background(), src, check); err != nil {
 		t.Fatalf("check after write: %v", err)
+	}
+	// Same content, different bytes: -check compares what it would write.
+	written, _ := os.ReadFile(path)
+	var compact bytes.Buffer
+	if err := json.Compact(&compact, written); err != nil {
+		t.Fatal(err)
+	}
+	os.WriteFile(path, compact.Bytes(), 0o644)
+	if err := run(context.Background(), src, check); err == nil || !strings.Contains(err.Error(), "out of date") {
+		t.Fatalf("check against a reformatted manifest: err = %v, want out of date", err)
 	}
 }
 
