@@ -323,3 +323,26 @@ func TestInteractiveFlowAsksAndCanCancel(t *testing.T) {
 		t.Error("cancelled install must not create the home")
 	}
 }
+
+func TestInteractiveRerunPreselectsTheConfiguredModel(t *testing.T) {
+	srv, m := fixture(t)
+	d := deps(t, srv, m)
+	cfg := config.Default()
+	cfg.Backend, cfg.Model = "cpu", "multilingual"
+	if err := config.Save(d.Layout, cfg); err != nil {
+		t.Fatal(err)
+	}
+	fp := &fakePrompt{selects: []string{"cpu", "multilingual"}, multi: []string{"claude"}, confirm: false}
+	d.Prompt = fp
+	if _, err := Run(context.Background(), d, Options{}); err == nil || !strings.Contains(err.Error(), "cancelled") {
+		t.Fatalf("Run() = %v, want the cancelled confirmation", err)
+	}
+	if len(fp.choices["Model"]) < 2 {
+		t.Fatalf("model choices = %+v, want the model prompt to be shown", fp.choices["Model"])
+	}
+	for _, c := range fp.choices["Model"] {
+		if c.Selected != (c.Value == "multilingual") {
+			t.Errorf("choice %+v: a rerun must preselect the configured model", c)
+		}
+	}
+}

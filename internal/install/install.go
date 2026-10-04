@@ -145,12 +145,12 @@ func Resolve(deps Deps, opts Options) (*Plan, error) {
 		}
 		if deps.Prompt != nil && !opts.Yes {
 			var choices []Choice
-			for _, name := range config.ModelNames {
+			for _, name := range config.ModelNames() {
 				v, err := deps.Manifest.Variant(name)
 				if err != nil {
 					continue
 				}
-				choices = append(choices, Choice{Value: name, Label: fmt.Sprintf("%s (%s)", name, humanBytes(v.TotalSize())), Description: modelBlurb(name), Selected: name == config.DefaultModel})
+				choices = append(choices, Choice{Value: name, Label: fmt.Sprintf("%s (%s)", name, humanBytes(v.TotalSize())), Description: modelBlurb(name), Selected: name == model})
 			}
 			v, err := deps.Prompt.Select("Model", choices)
 			if err != nil {

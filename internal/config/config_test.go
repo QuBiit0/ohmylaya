@@ -162,3 +162,11 @@ func TestDefaultTOMLGolden(t *testing.T) {
 		t.Errorf("default config.toml differs from golden\n--- got ---\n%s\n--- want ---\n%s", got, want)
 	}
 }
+
+func TestModelNamesReturnsACopy(t *testing.T) {
+	t.Parallel()
+	ModelNames()[0] = "mutated"
+	if got := ModelNames(); got[0] != DefaultModel {
+		t.Errorf("ModelNames() = %v, want a new slice on each call", got)
+	}
+}

@@ -126,7 +126,10 @@ type Config struct {
 const DefaultModel = "english"
 
 // ModelNames lists the checkpoints in the order the installer offers them.
-var ModelNames = []string{"english", "multilingual", "typed-decisions"}
+// It returns a new slice on each call, so callers may modify it freely.
+func ModelNames() []string {
+	return []string{DefaultModel, "multilingual", "typed-decisions"}
+}
 
 // Default returns the configuration the installer writes on a fresh machine.
 func Default() *Config {
@@ -162,7 +165,7 @@ func (c *Config) Validate() error {
 	case !backends[c.Backend]:
 		return fmt.Errorf("%w: backend %q (vulkan, cuda, cpu)", ErrInvalid, c.Backend)
 	case !models[c.Model]:
-		return fmt.Errorf("%w: model %q (%s)", ErrInvalid, c.Model, strings.Join(ModelNames, ", "))
+		return fmt.Errorf("%w: model %q (%s)", ErrInvalid, c.Model, strings.Join(ModelNames(), ", "))
 	case !providers[c.Provider]:
 		return fmt.Errorf("%w: provider %q (local, typesafe)", ErrInvalid, c.Provider)
 	case !logLevels[c.LogLevel]:
