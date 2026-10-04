@@ -86,8 +86,8 @@ func Run(ctx context.Context, s Suite, run Runner, reader *tools.Reader) Result 
 	r := Result{Tool: s.Tool, Cases: len(s.Cases)}
 	timeout := cmp.Or(s.Timeout, defaultTimeout)
 	for _, c := range s.Cases {
-		ctx, cancel := context.WithTimeout(ctx, timeout)
-		err := r.add(ctx, s.Tool, c, run, reader)
+		caseCtx, cancel := context.WithTimeout(ctx, timeout)
+		err := r.add(caseCtx, s.Tool, c, run, reader)
 		cancel()
 		if err != nil {
 			r.Failures = append(r.Failures, fmt.Sprintf("%s: %v", c.ID, err))
@@ -191,40 +191,72 @@ type output struct {
 // credits a result past top_k or the same id twice, and it fails when the
 // output does not line up with the labels.
 func (o output) correct(tool string, topK int, w want) (int, error) {
-	if tool == "screen" {
-		if o.Recommendation.Action == w.Action {
-			return 1, nil
-		}
-		return 0, nil
+	switch tool {
+	case "screen":
+		return o.correctScreen(w), nil
+	case "check":
+		return o.correctCheck(w)
+	case "classify":
+		return o.correctClassify(w)
+	case "rerank":
+		return o.correctRerank(topK, w), nil
 	}
-	if tool == "check" && len(o.Results) != len(w.Verdicts) {
+	return 0, fmt.Errorf("tool %s is not benchmarked", tool)
+}
+
+func (o output) correctScreen(w want) int {
+	if o.Recommendation.Action == w.Action {
+		return 1
+	}
+	return 0
+}
+
+// correctCheck compares verdicts in claim order.
+func (o output) correctCheck(w want) (int, error) {
+	if len(o.Results) != len(w.Verdicts) {
 		return 0, fmt.Errorf("%d verdicts for %d claims", len(o.Results), len(w.Verdicts))
 	}
-	if tool == "rerank" && topK > 0 && len(o.Results) > topK {
-		o.Results = o.Results[:topK]
-	}
-	n, seen := 0, map[string]bool{}
+	n := 0
 	for i, res := range o.Results {
-		if tool == "check" {
-			if res.Verdict == w.Verdicts[i] {
-				n++
-			}
-			continue
+		if res.Verdict == w.Verdicts[i] {
+			n++
 		}
+	}
+	return n, nil
+}
+
+func (o output) correctClassify(w want) (int, error) {
+	n, seen := 0, map[string]bool{}
+	for _, res := range o.Results {
 		if seen[res.ID] {
 			continue
 		}
 		seen[res.ID] = true
 		label, labelled := w.Labels[res.ID]
-		switch {
-		case tool == "classify" && !labelled:
+		if !labelled {
 			return 0, fmt.Errorf("result %s is not labelled", res.ID)
-		case tool == "classify" && label == res.Label,
-			tool == "rerank" && slices.Contains(w.Relevant, res.ID):
+		}
+		if label == res.Label {
 			n++
 		}
 	}
 	return n, nil
+}
+
+// correctRerank counts relevant ids within top_k; zero top_k counts all.
+func (o output) correctRerank(topK int, w want) int {
+	results := o.Results
+	if topK > 0 && len(results) > topK {
+		results = results[:topK]
+	}
+	n, seen := 0, map[string]bool{}
+	for _, res := range results {
+		if !seen[res.ID] && slices.Contains(w.Relevant, res.ID) {
+			n++
+		}
+		seen[res.ID] = true
+	}
+	return n
 }
 
 // Report writes a Markdown table with one row per suite.

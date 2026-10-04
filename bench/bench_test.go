@@ -143,10 +143,12 @@ func TestScoreNeverExceedsTheLabels(t *testing.T) {
 		correct             int
 		wantErr             string
 	}{
-		"rerank beyond top_k": {"rerank", `{"top_k":1}`, `{"relevant":["b"]}`, `{"results":[{"id":"a"},{"id":"b"}]}`, 0, ""},
-		"rerank duplicate":    {"rerank", `{"top_k":2}`, `{"relevant":["b"]}`, `{"results":[{"id":"b"},{"id":"b"}]}`, 1, ""},
-		"classify unknown id": {"classify", `{}`, `{"labels":{"a":"bug"}}`, `{"results":[{"id":"A","label":"bug"}]}`, 0, "not labelled"},
-		"check missing claim": {"check", `{}`, `{"verdicts":["supported","supported"]}`, `{"results":[{"verdict":"supported"}]}`, 0, "1 verdicts"},
+		"rerank beyond top_k":  {"rerank", `{"top_k":1}`, `{"relevant":["b"]}`, `{"results":[{"id":"a"},{"id":"b"}]}`, 0, ""},
+		"rerank duplicate":     {"rerank", `{"top_k":2}`, `{"relevant":["b"]}`, `{"results":[{"id":"b"},{"id":"b"}]}`, 1, ""},
+		"classify unknown id":  {"classify", `{}`, `{"labels":{"a":"bug"}}`, `{"results":[{"id":"A","label":"bug"}]}`, 0, "not labelled"},
+		"check missing claim":  {"check", `{}`, `{"verdicts":["supported","supported"]}`, `{"results":[{"verdict":"supported"}]}`, 0, "1 verdicts"},
+		"check extra verdict":  {"check", `{}`, `{"verdicts":["supported"]}`, `{"results":[{"verdict":"supported"},{"verdict":"supported"}]}`, 0, "2 verdicts"},
+		"rerank without top_k": {"rerank", `{}`, `{"relevant":["c"]}`, `{"results":[{"id":"a"},{"id":"b"},{"id":"c"}]}`, 1, ""},
 	}
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
@@ -172,6 +174,30 @@ func TestRunGivesEachCaseADeadline(t *testing.T) {
 	}
 	if r := Run(context.Background(), s, hang, tools.NewReader(nil)); !r.Failed() {
 		t.Fatalf("result = %+v, want the hung case recorded as failed", r)
+	}
+}
+
+// A hung case must not use up the next case's time.
+func TestRunGivesTheNextCaseAFreshDeadline(t *testing.T) {
+	t.Parallel()
+	in := func(id string) json.RawMessage { return json.RawMessage(`{"text":"` + id + `"}`) }
+	s := Suite{Tool: "screen", Timeout: 50 * time.Millisecond, Cases: []Case{
+		{ID: "hangs", Input: in("hangs"), Want: json.RawMessage(`{"action":"allow"}`)},
+		{ID: "answers", Input: in("answers"), Want: json.RawMessage(`{"action":"allow"}`)},
+	}}
+	run := func(ctx context.Context, _ string, input []byte) ([]byte, error) {
+		if strings.Contains(string(input), "hangs") {
+			<-ctx.Done()
+			return nil, ctx.Err()
+		}
+		if err := ctx.Err(); err != nil {
+			return nil, err
+		}
+		return []byte(`{"recommendation":{"action":"allow"}}`), nil
+	}
+	r := Run(context.Background(), s, run, tools.NewReader(nil))
+	if len(r.Failures) != 1 || r.Correct != 1 {
+		t.Fatalf("result = %+v, want only the hung case failed", r)
 	}
 }
 

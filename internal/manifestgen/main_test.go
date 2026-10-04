@@ -201,12 +201,17 @@ func TestRunWritesThenChecks(t *testing.T) {
 		t.Fatalf("check after write: %v", err)
 	}
 	// Same content, different bytes: -check compares what it would write.
-	written, _ := os.ReadFile(path)
+	written, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
 	var compact bytes.Buffer
 	if err := json.Compact(&compact, written); err != nil {
 		t.Fatal(err)
 	}
-	os.WriteFile(path, compact.Bytes(), 0o644)
+	if err := os.WriteFile(path, compact.Bytes(), 0o644); err != nil {
+		t.Fatal(err)
+	}
 	if err := run(context.Background(), src, check); err == nil || !strings.Contains(err.Error(), "out of date") {
 		t.Fatalf("check against a reformatted manifest: err = %v, want out of date", err)
 	}
