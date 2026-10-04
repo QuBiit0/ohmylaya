@@ -29,7 +29,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-24.04, macos-14, windows-2022]
+        # The upstream macOS engine targets macOS 15 or newer.
+        os: [ubuntu-24.04, macos-15, windows-2022]
     runs-on: ${{ matrix.os }}
     timeout-minutes: 30
     env:
@@ -45,6 +46,25 @@ jobs:
             install.sh
             install.ps1
           sparse-checkout-cone-mode: false
+
+      # Windows runners have no GPU driver and so no Vulkan loader, which the
+      # engine needs even on the CPU backend. Install only the loader, as a
+      # user without a GPU would, from the LunarG Vulkan Runtime.
+      - name: Vulkan loader (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        env:
+          VULKAN_RT_URL: https://sdk.lunarg.com/sdk/download/1.4.363.0/windows/vulkan-runtime-components.zip
+          VULKAN_RT_SHA256: a25a927aa8b9f0371048f1861cf88ac3b9bc9b1fb332c42d897c8ab32695769a
+        run: |
+          $zip = Join-Path $env:RUNNER_TEMP 'vulkan-runtime.zip'
+          Invoke-WebRequest -Uri $env:VULKAN_RT_URL -OutFile $zip -UseBasicParsing -MaximumRetryCount 3 -RetryIntervalSec 5
+          $sum = (Get-FileHash $zip -Algorithm SHA256).Hash.ToLower()
+          if ($sum -ne $env:VULKAN_RT_SHA256) { throw "Vulkan Runtime checksum mismatch: $sum" }
+          Expand-Archive $zip -DestinationPath (Join-Path $env:RUNNER_TEMP 'vulkan-runtime')
+          $dll = Get-ChildItem (Join-Path $env:RUNNER_TEMP 'vulkan-runtime') -Recurse -Filter vulkan-1.dll | Where-Object { $_.Directory.Name -eq 'x64' } | Select-Object -First 1
+          if (-not $dll) { throw 'no x64 vulkan-1.dll in the Vulkan Runtime archive' }
+          Copy-Item $dll.FullName (Join-Path $env:SystemRoot 'System32\vulkan-1.dll')
 
       - name: One-shot install (Linux, macOS)
         id: install-unix

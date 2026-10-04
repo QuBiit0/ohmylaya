@@ -29,3 +29,6 @@ func (HostProbe) HasLibrary(name string) bool {
 
 // GLibCVersion is not applicable on Windows.
 func (HostProbe) GLibCVersion() string { return "" }
+
+// MacOSVersion is not applicable on Windows.
+func (HostProbe) MacOSVersion() string { return "" }

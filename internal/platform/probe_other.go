@@ -1,11 +1,11 @@
-//go:build !windows && !linux
+//go:build !windows && !linux && !darwin
 
 package platform
 
 import "runtime"
 
-// HostProbe queries the real host. On macOS and other systems no shared
-// library probing is needed in v1.
+// HostProbe queries the real host. No engine build exists for these
+// systems, so Detect reports them unsupported.
 type HostProbe struct{}
 
 // OS returns runtime.GOOS.
@@ -19,3 +19,6 @@ func (HostProbe) HasLibrary(string) bool { return false }
 
 // GLibCVersion is not applicable.
 func (HostProbe) GLibCVersion() string { return "" }
+
+// MacOSVersion is not applicable.
+func (HostProbe) MacOSVersion() string { return "" }

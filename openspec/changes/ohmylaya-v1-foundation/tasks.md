@@ -14,9 +14,14 @@ earlier packages. Strict TDD applies to every Go task.
 - [x] Measure cold start and latency on CPU and Vulkan (Windows). (2026-09-23)
 - [x] Write `docs/research/engine-verification.md`; design D3 and the
       confidence contract updated. (2026-09-23)
-- [ ] Verify Vulkan executable with `--cpu` on a host without a Vulkan loader
-      (Windows and Linux).
-- [ ] Verify macOS executable honours `--cpu`.
+- [x] Verify Vulkan executable with `--cpu` on a host without a Vulkan loader
+      (Windows and Linux). It does not start: the Windows build exits with
+      STATUS_DLL_NOT_FOUND for vulkan-1.dll and the Linux build links
+      libvulkan.so.1. Detection now offers `cpu` only with the loader and
+      the docs say so. (2026-10-04, install-smoke on GitHub runners)
+- [x] Verify macOS executable honours `--cpu`. The r0002 build targets
+      macOS 15 (LC_BUILD_VERSION minos 15.0) and aborts in dyld on macOS 14;
+      detection now requires macOS 15. (2026-10-04)
 - [ ] Measure CUDA on Windows (needs the two cuBLAS DLLs).
 
 Review forecast: docs only, about 150 lines.

@@ -69,8 +69,12 @@ Downloads: engine 40 to 80 MB (Vulkan or CPU), 200 MB plus two cuBLAS DLLs
 (CUDA on Windows), 786 MB (CUDA on Linux); checkpoint 650 to 850 MB.
 
 Runtime needs: Windows 10 or 11 x64, Linux x64 with glibc 2.39+, or Apple
-Silicon (CPU backend in this release). Vulkan needs a GPU driver; CUDA needs
-the NVIDIA driver.
+Silicon with macOS 15+ (CPU backend in this release). On Windows and Linux
+the CPU backend runs the Vulkan build, so it needs the Vulkan loader even
+without a GPU: a GPU driver provides it, or install the
+[Vulkan Runtime](https://vulkan.lunarg.com/sdk/home) on Windows or
+`libvulkan1` on Linux. CUDA needs the NVIDIA driver. The installer checks
+all of this before downloading anything.
 
 ## Use
 

@@ -50,10 +50,13 @@ func TestMain(m *testing.M) {
 
 type fakeProbe struct{}
 
-func (fakeProbe) OS() string                  { return runtime.GOOS }
-func (fakeProbe) Arch() string                { return runtime.GOARCH }
-func (fakeProbe) HasLibrary(name string) bool { return false }
-func (fakeProbe) GLibCVersion() string        { return "2.40" }
+func (fakeProbe) OS() string   { return runtime.GOOS }
+func (fakeProbe) Arch() string { return runtime.GOARCH }
+func (fakeProbe) HasLibrary(name string) bool {
+	return name == "vulkan-1.dll" || name == "libvulkan.so.1"
+}
+func (fakeProbe) GLibCVersion() string { return "2.40" }
+func (fakeProbe) MacOSVersion() string { return "15.0" }
 
 func digest(b []byte) string {
 	s := sha256.Sum256(b)
@@ -82,7 +85,7 @@ func fixture(t *testing.T) (*httptest.Server, *manifest.Manifest) {
 	t.Cleanup(srv.Close)
 	m := &manifest.Manifest{Schema: 1}
 	m.Engine.Project, m.Engine.Tag = "test/engine", "r0"
-	m.Engine.Assets = []manifest.Asset{{OS: runtime.GOOS, Arch: runtime.GOARCH, Backend: "cpu", Name: "engine", URL: srv.URL + "/engine", Size: int64(len(fakeEngineBytes)), SHA256: digest(fakeEngineBytes), SupportsCPU: true}}
+	m.Engine.Assets = []manifest.Asset{{OS: runtime.GOOS, Arch: runtime.GOARCH, Backend: "vulkan", Name: "engine", URL: srv.URL + "/engine", Size: int64(len(fakeEngineBytes)), SHA256: digest(fakeEngineBytes), SupportsCPU: true}}
 	m.Models.Repo, m.Models.Revision = "laya", "rev"
 	files2 := func() []manifest.File {
 		return []manifest.File{
@@ -145,7 +148,12 @@ func TestInstallEndToEndThenIdempotentThenUninstall(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Run() = %v\n%s", err, d.Out.(*bytes.Buffer).String())
 	}
-	if rep.Backend != "cpu" || rep.Model != "english" || !rep.SmokeRan || !rep.Changed {
+	// Detection prefers vulkan where a loader exists; macOS only has cpu.
+	wantBackend := "vulkan"
+	if runtime.GOOS == "darwin" {
+		wantBackend = "cpu"
+	}
+	if rep.Backend != wantBackend || rep.Model != "english" || !rep.SmokeRan || !rep.Changed {
 		t.Errorf("report = %+v", rep)
 	}
 	if len(rep.Downloaded) != 3 {
@@ -158,7 +166,7 @@ func TestInstallEndToEndThenIdempotentThenUninstall(t *testing.T) {
 		t.Error("model not placed")
 	}
 	cfg, _ := config.Load(d.Layout)
-	if cfg.Backend != "cpu" || len(cfg.Agents.Registered) != 2 {
+	if cfg.Backend != wantBackend || len(cfg.Agents.Registered) != 2 {
 		t.Errorf("config = %+v", cfg)
 	}
 	// claude and pi were detected (directories exist); codex and opencode were not.
@@ -260,6 +268,26 @@ func TestInstallSmokeFailureStopsBeforeRegistering(t *testing.T) {
 	a, _ := agents.ByID("claude")
 	if st := a.Status(d.Env, d.BinPath); st.Registered {
 		t.Error("agents must not be registered after a failed smoke test")
+	}
+}
+
+// bareProbe is a host the engine cannot start on: no Vulkan loader on
+// Windows or Linux, and macOS 14.
+type bareProbe struct{ fakeProbe }
+
+func (bareProbe) HasLibrary(string) bool { return false }
+func (bareProbe) MacOSVersion() string   { return "14.0" }
+
+func TestInstallRefusesBeforeDownloadingOnAHostTheEngineCannotStartOn(t *testing.T) {
+	srv, m := fixture(t)
+	d := deps(t, srv, m)
+	d.Probe = bareProbe{}
+	_, err := Run(context.Background(), d, Options{Backend: "auto", Agents: []string{"none"}, Yes: true})
+	if err == nil || !strings.Contains(err.Error(), "needs") {
+		t.Fatalf("err = %v, want the unsupported-host reason", err)
+	}
+	if _, err := os.Stat(d.Layout.Home); !errors.Is(err, os.ErrNotExist) {
+		t.Error("a refused install must not create the home or download anything")
 	}
 }
 

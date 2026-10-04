@@ -44,6 +44,7 @@ func (probe) OS() string                    { return runtime.GOOS }
 func (probe) Arch() string                  { return runtime.GOARCH }
 func (p probe) HasLibrary(name string) bool { return p.libs[name] }
 func (probe) GLibCVersion() string          { return "2.40" }
+func (probe) MacOSVersion() string          { return "15.0" }
 
 func testDeps(t *testing.T) Deps {
 	t.Helper()
@@ -66,7 +67,7 @@ func testDeps(t *testing.T) Deps {
 	return Deps{
 		Layout:     l,
 		Manifest:   m,
-		Probe:      probe{},
+		Probe:      probe{libs: map[string]bool{"vulkan-1.dll": true, "libvulkan.so.1": true}},
 		Env:        agents.Env{Home: userHome, ConfigHome: filepath.Join(userHome, ".config"), BackupsDir: l.Backups, LookPath: func(string) (string, error) { return "", errors.New("no") }},
 		BinPath:    filepath.Join(home, "ohmylaya"),
 		Version:    "1.0.0",
@@ -144,15 +145,35 @@ func TestHealthyInstallPassesAndSmokeRuns(t *testing.T) {
 	}
 }
 
-func TestVulkanWithoutLoaderFails(t *testing.T) {
-	d := testDeps(t)
-	cfg := config.Default()
-	cfg.Backend = "vulkan"
-	config.Save(d.Layout, cfg)
-	r := Run(context.Background(), d)
-	c := byID(r, "runtime-deps")
-	if c.Status != Fail || !strings.Contains(c.Fix, "cpu") {
-		t.Errorf("runtime-deps = %+v", c)
+// On Windows and Linux the CPU backend runs the Vulkan build, so it needs the
+// loader too, and switching to it is no fix for a missing loader.
+func TestVulkanOrCPUWithoutLoaderFails(t *testing.T) {
+	if runtime.GOOS == "darwin" {
+		t.Skip("the macOS engine does not use Vulkan")
+	}
+	for _, backend := range []string{"vulkan", "cpu"} {
+		t.Run(backend, func(t *testing.T) {
+			d := testDeps(t)
+			d.Probe = probe{}
+			cfg := config.Default()
+			cfg.Backend = backend
+			if err := config.Save(d.Layout, cfg); err != nil {
+				t.Fatal(err)
+			}
+			c := byID(Run(context.Background(), d), "runtime-deps")
+			if c.Status != Fail || strings.Contains(c.Fix, "--backend") || !strings.Contains(c.Fix, "Vulkan") {
+				t.Errorf("runtime-deps = %+v, want FAIL with a loader fix", c)
+			}
+		})
+	}
+}
+
+// A config can name vulkan where no Vulkan build exists (macOS, or a config
+// copied between machines). The check must still say what to do.
+func TestRuntimeDepsWithoutAVulkanBuildNamesAFix(t *testing.T) {
+	c := runtimeDepsFor(testDeps(t), "vulkan", "darwin")
+	if c.Status != Fail || c.Fix == "" || strings.HasPrefix(c.Detail, " ") {
+		t.Errorf("runtime-deps = %+v, want FAIL with a detail and a fix", c)
 	}
 }
 

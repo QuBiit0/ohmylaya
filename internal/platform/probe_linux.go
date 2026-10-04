@@ -60,3 +60,6 @@ func (HostProbe) GLibCVersion() string {
 	}
 	return fields[1]
 }
+
+// MacOSVersion is not applicable on Linux.
+func (HostProbe) MacOSVersion() string { return "" }

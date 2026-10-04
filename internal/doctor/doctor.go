@@ -211,28 +211,31 @@ func PrintJSON(w io.Writer, r Report) error {
 	return enc.Encode(r)
 }
 
-func runtimeDeps(d Deps, backend string) Check {
+func runtimeDeps(d Deps, backend string) Check { return runtimeDepsFor(d, backend, runtime.GOOS) }
+
+func runtimeDepsFor(d Deps, backend, goos string) Check {
 	switch {
-	case backend == "cpu":
-		return Check{ID: "runtime-deps", Status: Pass, Detail: "cpu backend needs no GPU runtime"}
-	case backend == "vulkan":
-		lib := "libvulkan.so.1"
-		if runtime.GOOS == "windows" {
-			lib = "vulkan-1.dll"
+	case backend == "cpu" && goos == "darwin":
+		return Check{ID: "runtime-deps", Status: Pass, Detail: "the macOS engine needs no GPU runtime"}
+	case backend == "vulkan", backend == "cpu":
+		// The CPU backend runs the Vulkan build, which links the loader.
+		lib, fix := platform.VulkanLoader(goos)
+		if lib == "" {
+			return Check{ID: "runtime-deps", Status: Fail, Detail: "no " + backend + " engine build for " + goos, Fix: "ohmylaya install --backend auto"}
 		}
 		if d.Probe.HasLibrary(lib) {
 			return Check{ID: "runtime-deps", Status: Pass, Detail: lib + " found"}
 		}
-		return Check{ID: "runtime-deps", Status: Fail, Detail: lib + " not found", Fix: "install your GPU driver or switch to --backend cpu"}
+		return Check{ID: "runtime-deps", Status: Fail, Detail: lib + " not found; the " + backend + " backend needs it", Fix: fix}
 	case backend == "cuda":
 		lib := "libcuda.so.1"
-		if runtime.GOOS == "windows" {
+		if goos == "windows" {
 			lib = "nvcuda.dll"
 		}
 		if !d.Probe.HasLibrary(lib) {
 			return Check{ID: "runtime-deps", Status: Fail, Detail: lib + " not found", Fix: "install the NVIDIA driver or switch to --backend vulkan"}
 		}
-		if runtime.GOOS == "windows" {
+		if goos == "windows" {
 			var missing []string
 			for _, dll := range []string{"cublas64_13.dll", "cublasLt64_13.dll"} {
 				if !exists(filepath.Join(d.Layout.Bin, dll)) {

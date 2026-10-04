@@ -30,6 +30,10 @@ recorded in `docs/research/`. None of it is softened.
   inspect, and `allow` is not proof of safety.
 - `action.act_probability` from the engine carries no signal and is ignored.
 - One engine process serves one checkpoint. No automatic language routing.
+- The upstream engine needs the Vulkan loader on Windows and Linux even for
+  the CPU backend, and macOS 15 or newer on Apple Silicon. Found by running
+  the installers on clean GitHub runners (see T0 in the v1 tasks); the
+  installer and `ohmylaya doctor` now check both before anything starts.
 - macOS runs the CPU backend in this release; Core ML needs exported model
   buckets nobody publishes yet.
 - laya.cpp releases are upstream prereleases without GPU validation in CI.

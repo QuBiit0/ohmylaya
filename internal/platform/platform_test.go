@@ -1,6 +1,7 @@
 package platform
 
 import (
+	"strings"
 	"testing"
 )
 
@@ -8,12 +9,14 @@ type fakeProbe struct {
 	os, arch string
 	libs     map[string]bool
 	glibc    string
+	macos    string
 }
 
 func (f fakeProbe) OS() string                  { return f.os }
 func (f fakeProbe) Arch() string                { return f.arch }
 func (f fakeProbe) HasLibrary(name string) bool { return f.libs[name] }
 func (f fakeProbe) GLibCVersion() string        { return f.glibc }
+func (f fakeProbe) MacOSVersion() string        { return f.macos }
 
 func TestDetect(t *testing.T) {
 	t.Parallel()
@@ -39,10 +42,11 @@ func TestDetect(t *testing.T) {
 			wantDefault: "vulkan",
 		},
 		{
-			name:        "windows without gpu runtime",
-			probe:       fakeProbe{os: "windows", arch: "amd64"},
-			wantOrder:   []string{"cpu"},
-			wantDefault: "cpu",
+			name:        "windows with the nvidia driver but no vulkan loader",
+			probe:       fakeProbe{os: "windows", arch: "amd64", libs: map[string]bool{"nvcuda.dll": true}},
+			wantOrder:   []string{"cuda"},
+			wantDefault: "cuda",
+			wantCUDA:    true,
 		},
 		{
 			name:        "linux with cuda and vulkan and new glibc",
@@ -64,7 +68,13 @@ func TestDetect(t *testing.T) {
 			wantDefault: "",
 		},
 		{
-			name:        "macos arm64 is cpu only in v1",
+			name:        "macos 15 arm64 is cpu only in v1",
+			probe:       fakeProbe{os: "darwin", arch: "arm64", macos: "15.0"},
+			wantOrder:   []string{"cpu"},
+			wantDefault: "cpu",
+		},
+		{
+			name:        "macos with an unreadable version still gets cpu",
 			probe:       fakeProbe{os: "darwin", arch: "arm64"},
 			wantOrder:   []string{"cpu"},
 			wantDefault: "cpu",
@@ -110,18 +120,50 @@ func TestDetectUnsupportedExplainsWhy(t *testing.T) {
 	}
 }
 
-func TestGLibCAtLeast(t *testing.T) {
+// The engine's CPU mode lives in the Vulkan build, which links the Vulkan
+// loader, and the macOS build targets macOS 15. Without them the engine dies
+// at start, after a large download, so detection must refuse up front.
+func TestDetectRefusesHostsTheEngineCannotStartOn(t *testing.T) {
+	t.Parallel()
+	cases := map[string]struct {
+		probe fakeProbe
+		want  []string
+	}{
+		"windows without vulkan loader": {fakeProbe{os: "windows", arch: "amd64"}, []string{"vulkan-1.dll", "GPU driver", "Vulkan Runtime"}},
+		"linux without vulkan loader":   {fakeProbe{os: "linux", arch: "amd64", glibc: "2.40"}, []string{"libvulkan.so.1", "libvulkan1"}},
+		"macos 14":                      {fakeProbe{os: "darwin", arch: "arm64", macos: "14.6"}, []string{"macOS 15", "14.6"}},
+	}
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			d := Detect(tc.probe)
+			if len(d.Options) != 0 || d.Default != "" {
+				t.Fatalf("options = %+v, want none", d.Options)
+			}
+			for _, w := range tc.want {
+				if !strings.Contains(d.Unsupported, w) {
+					t.Errorf("Unsupported = %q, want it to mention %q", d.Unsupported, w)
+				}
+			}
+		})
+	}
+}
+
+func TestVersionAtLeast(t *testing.T) {
 	t.Parallel()
 	cases := []struct {
 		have string
 		want bool
 	}{
-		{"2.39", true}, {"2.40", true}, {"3.0", true}, {"2.38", false}, {"2.9", false}, {"", false}, {"garbage", false},
+		{"2.39", true}, {"2.40", true}, {"3.0", true}, {"3", true}, {"2.38", false}, {"2.9", false}, {"2", false}, {"", false}, {"garbage", false},
 	}
 	for _, tc := range cases {
-		if got := glibcAtLeast(tc.have, 2, 39); got != tc.want {
-			t.Errorf("glibcAtLeast(%q) = %v, want %v", tc.have, got, tc.want)
+		if got := versionAtLeast(tc.have, 2, 39); got != tc.want {
+			t.Errorf("versionAtLeast(%q) = %v, want %v", tc.have, got, tc.want)
 		}
+	}
+	if !versionAtLeast("15.0.1", 15, 0) || versionAtLeast("14.7.1", 15, 0) {
+		t.Error("macOS versions compare by major then minor")
 	}
 }
 
