@@ -233,9 +233,10 @@ Setup and Agents; Update, Doctor and Logs).
 - [x] Release workflow on `v*` tags running tests then GoReleaser.
       (2026-09-23)
 - [x] Tag v0.1.0, publish release, verify the one-shot on all three OSes.
-      `install-smoke` runs the published installers on clean Linux, macOS 15
-      and Windows runners after every release; v0.1.1 passed on all three.
-      (2026-10-04)
+      v0.1.0 was tagged and published but never verified off Windows, and
+      v0.1.1 superseded it. `install-smoke` runs the published installers on
+      clean Linux, macOS 15 and Windows runners after every release; v0.1.1
+      (by hand) and v0.1.2 (on release) passed on all three. (2026-10-04)
 
 Review forecast: docs only.
 
