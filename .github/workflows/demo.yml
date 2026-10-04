@@ -1,0 +1,66 @@
+name: demo
+
+# Records docs/assets/demo.gif from a real install of a published release on
+# a clean Linux runner, and uploads it as an artifact. Commit the GIF by hand.
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Release tag to install, e.g. v0.1.2, or latest"
+        required: false
+        default: latest
+
+permissions:
+  contents: read
+
+jobs:
+  record:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      # Empty config directories so the TUI shows all four agents detected.
+      - name: Agent homes
+        run: |
+          mkdir -p ~/.claude ~/.codex ~/.config/opencode ~/.pi/agent
+          printf '{\n  "mcpServers": {}\n}\n' > ~/.pi/agent/mcp.json
+
+      - name: Install ohmylaya
+        env:
+          OHMYLAYA_VERSION: ${{ inputs.version }}
+          OHMYLAYA_INSTALL_ARGS: --backend cpu --agents all --yes
+        run: |
+          sh install.sh
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Demo input
+        run: |
+          cat > triage.json <<'EOF'
+          {"labels": [
+             {"key": "bug", "description": "something is broken or crashes"},
+             {"key": "feature", "description": "a request for new behaviour"},
+             {"key": "question", "description": "the user asks how to do something"}],
+           "items": [
+             {"id": "#41", "text": "The app crashes when I click save on an empty form"},
+             {"id": "#42", "text": "Could you add a dark mode to the settings page?"},
+             {"id": "#43", "text": "How do I point the CLI at a different config file?"}]}
+          EOF
+
+      # Start the engine so the recording shows it running and pays no
+      # cold start.
+      - name: Warm up
+        run: ohmylaya ask classify < triage.json | jq -e '.results | length == 3 and all(.id and .label and .action)' 
+
+      - uses: charmbracelet/vhs-action@v2
+        with:
+          path: docs/assets/demo.tape
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: demo
+          path: docs/assets/demo.gif
+          if-no-files-found: error
