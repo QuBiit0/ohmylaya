@@ -3,6 +3,28 @@
 All notable changes to ohmylaya. Versions follow [Semantic Versioning](https://semver.org/);
 while the version is 0.x, minor releases may change defaults.
 
+## [0.1.3] - 2026-10-05
+
+### Changed
+
+- `ohmylaya doctor` explains a busy port better. On Linux the sockets of an
+  engine stopped in the last minute keep the port busy for a while; the
+  warning now says so instead of blaming another service, and notes that it
+  clears by itself.
+
+### Added
+
+- A recorded demo at the top of the README. The `demo` workflow re-records
+  it from a real install of any release.
+- `CHANGELOG.md` and `SECURITY.md`, with private vulnerability reporting
+  enabled.
+
+### Maintenance
+
+- CI actions moved to their Node 24 releases.
+- Documentation polish: the README, troubleshooting, CONTRIBUTING, and issue
+  templates that apply labels that exist.
+
 ## [0.1.2] - 2026-10-04
 
 ### Changed
@@ -60,6 +82,7 @@ First release.
 - Registration for Claude Code, Codex, OpenCode and Pi, plus an agent skill.
 - `ohmylaya doctor`, `ohmylaya update`, `ohmylaya uninstall` and a TUI.
 
+[0.1.3]: https://github.com/QuBiit0/ohmylaya/compare/v0.1.2...v0.1.3
 [0.1.2]: https://github.com/QuBiit0/ohmylaya/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/QuBiit0/ohmylaya/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/QuBiit0/ohmylaya/releases/tag/v0.1.0

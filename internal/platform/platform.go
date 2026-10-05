@@ -140,14 +140,14 @@ func versionAtLeast(version string, major, minor int) bool {
 	if err != nil {
 		return false
 	}
-	min := 0
+	mnr := 0
 	if len(parts) > 1 {
-		if min, err = strconv.Atoi(parts[1]); err != nil {
+		if mnr, err = strconv.Atoi(parts[1]); err != nil {
 			return false
 		}
 	}
 	if maj != major {
 		return maj > major
 	}
-	return min >= minor
+	return mnr >= minor
 }

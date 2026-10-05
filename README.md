@@ -163,7 +163,7 @@ export `TYPESAFE_API_KEY`.
 
 ## Status
 
-v0.1.2. Right after each release is published, CI installs it with the
+v0.1.3. Right after each release is published, CI installs it with the
 one-shot scripts on clean Linux, macOS 15 and Windows machines and makes a
 real tool call. Windows is also
 verified end to end on real hardware with Vulkan, CUDA and CPU. Field

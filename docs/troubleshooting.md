@@ -13,7 +13,7 @@ Run `ohmylaya doctor` first. Each failing line has a fix. Paste
 | `runtime-deps FAIL vulkan-1.dll not found` or `libvulkan.so.1 not found` | Vulkan loader missing (driver removed or never installed) | same fix as the "needs the Vulkan loader" row above; switching to `cpu` does not help |
 | `runtime-deps FAIL missing cublas64_13.dll` | CUDA chosen but DLLs absent | `ohmylaya install --backend cuda`; v0.1.0 and v0.1.1 could not extract them, so update first |
 | First call takes many seconds | shader warmup after a cold start | expected once per engine start |
-| `port WARN in use by another service` | something else on 45292 | harmless; the engine takes the next port. Set `port` in config to silence it |
+| `port WARN ... is busy` | another service on 45292, or, on Linux, the sockets of an engine stopped in the last minute | harmless; the engine takes the next port, and the second case clears by itself within a minute. If it persists, set `port` in config |
 | `agents FAIL stale` | binary moved or reinstalled elsewhere | `ohmylaya install` rewrites the absolute path |
 | Pi shows "no mcp.json" | Pi has no MCP adapter | install `pi-mcp-adapter` in Pi, then `ohmylaya agents --register pi` |
 | `screen` blocks a README | `screen` reads imperative docs as injection (45% accuracy on the benchmark) | treat `block` as inspect and read the page yourself; tune `thresholds` per call |

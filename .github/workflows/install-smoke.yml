@@ -39,7 +39,7 @@ jobs:
       OHMYLAYA_INSTALL_ARGS: --backend cpu --agents none --yes
       PROMPT: '{"labels":[{"key":"bug","description":"something is broken"},{"key":"feature","description":"a request for new behaviour"}],"items":[{"id":"1","text":"The app crashes when I click save"}]}'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           persist-credentials: false
           sparse-checkout: |

@@ -280,7 +280,9 @@ func portCheck(ctx context.Context, d Deps, cfg *config.Config) Check {
 	if herr == nil && h.Ready() {
 		return Check{ID: "port", Status: Pass, Detail: addr + " owned by a healthy engine"}
 	}
-	return Check{ID: "port", Status: Warn, Detail: addr + " in use by another service; the sidecar will use the next free port", Fix: "set port in " + d.Layout.ConfigPath + " to avoid the scan"}
+	// On Linux the sockets of an engine stopped in the last minute keep the
+	// port unbindable for a while, so do not blame another service alone.
+	return Check{ID: "port", Status: Warn, Detail: addr + " is busy: another service, or an engine stopped in the last minute; the sidecar will use the next free port", Fix: "if it persists, set port in " + d.Layout.ConfigPath + " to avoid the scan"}
 }
 
 type sidecarState struct{ backend string }

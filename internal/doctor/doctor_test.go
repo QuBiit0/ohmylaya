@@ -6,6 +6,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"errors"
+	"net"
 	"net/http"
 	"os"
 	"os/exec"
@@ -13,6 +14,7 @@ import (
 	"runtime"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/QuBiit0/ohmylaya/internal/agents"
 	"github.com/QuBiit0/ohmylaya/internal/config"
@@ -183,5 +185,24 @@ func TestVersionOfflineSkips(t *testing.T) {
 	r := Run(context.Background(), d)
 	if c := byID(r, "version"); c.Status != Skip {
 		t.Errorf("version = %+v, want SKIP offline", c)
+	}
+}
+
+// A busy port is often only the sockets of an engine stopped moments ago
+// (Linux keeps them for up to a minute), so the warning must not blame
+// another service alone, and must say the sidecar copes.
+func TestBusyPortWarningNamesARecentlyStoppedEngine(t *testing.T) {
+	d := testDeps(t)
+	d.Client = &http.Client{Timeout: 300 * time.Millisecond}
+	l, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer l.Close()
+	cfg := config.Default()
+	cfg.Port = l.Addr().(*net.TCPAddr).Port
+	c := portCheck(context.Background(), d, cfg)
+	if c.Status != Warn || !strings.Contains(c.Detail, "stopped") || !strings.Contains(c.Detail, "next free port") {
+		t.Errorf("port = %+v, want a WARN that mentions a recently stopped engine and the fallback", c)
 	}
 }
